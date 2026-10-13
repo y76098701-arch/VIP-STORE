@@ -1,0 +1,75 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+model Admin {
+  id        String   @id @default(cuid())
+  email     String   @unique
+  password  String
+  name      String
+  role      String   @default("admin")
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model DiamondPackage {
+  id        String   @id @default(cuid())
+  diamonds  Int
+  price     Float
+  currency  String   @default("EGP")
+  isActive  Boolean  @default(true)
+  sortOrder Int      @default(0)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  orders    Order[]
+}
+
+model Order {
+  id              String          @id @default(cuid())
+  orderNumber     String          @unique
+  playerUid       String
+  playerName      String?
+  packageId       String
+  package         DiamondPackage  @relation(fields: [packageId], references: [id])
+  originalPrice   Float
+  discountPercent Float           @default(0)
+  discountAmount  Float           @default(0)
+  finalPrice      Float
+  isFirstOrder    Boolean         @default(false)
+  paymentMethod   String?
+  paymentRef      String?
+  receiptUrl      String?
+  status          String          @default("PENDING_PAYMENT")
+  providerTxId    String?
+  adminNotes      String?
+  createdAt       DateTime        @default(now())
+  updatedAt       DateTime        @updatedAt
+  statusHistory   StatusHistory[]
+}
+
+model StatusHistory {
+  id        String   @id @default(cuid())
+  orderId   String
+  order     Order    @relation(fields: [orderId], references: [id])
+  status    String
+  note      String?
+  createdAt DateTime @default(now())
+}
+
+model UidDiscount {
+  id        String   @id @default(cuid())
+  playerUid String   @unique
+  orderId   String
+  usedAt    DateTime @default(now())
+}
+
+model Setting {
+  id    String @id @default(cuid())
+  key   String @unique
+  value String
+}
