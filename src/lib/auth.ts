@@ -13,7 +13,17 @@ export const authOptions: NextAuthOptions = {
       },
       async authorize(credentials) {
         if (!credentials?.email || !credentials?.password) return null;
-        const admin = await prisma.admin.findUnique({ where: { email: credentials.email } });
+        const input = credentials.email.trim();
+        const admin = await prisma.admin.findFirst({
+          where: {
+            OR: [
+              { email: input },
+              { email: input.toLowerCase() },
+              { email: `${input.toLowerCase()}@vipstore.com` },
+              { name: input },
+            ],
+          },
+        });
         if (!admin) return null;
         const valid = await bcrypt.compare(credentials.password, admin.password);
         if (!valid) return null;

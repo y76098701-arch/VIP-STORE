@@ -106,13 +106,13 @@ export default function AdminLoginPage() {
               <label className="block text-xs font-semibold text-vip-text-secondary mb-1.5 select-none">
                 <span className="flex items-center gap-1.5">
                   <Mail className="w-3.5 h-3.5 text-vip-purple-light" />
-                  {isArabic ? 'البريد الإلكتروني' : 'Email Address'}
+                  {isArabic ? 'اسم المستخدم أو البريد الإلكتروني' : 'Username or Email'}
                 </span>
               </label>
               <Input
-                type="email"
-                autoComplete="email"
-                placeholder={isArabic ? 'admin@vipstore.com' : 'admin@vipstore.com'}
+                type="text"
+                autoComplete="username"
+                placeholder={isArabic ? 'youssef' : 'youssef'}
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 disabled={loading}
