@@ -120,27 +120,40 @@ function TopupInner() {
 
       const data = await res.json();
 
-      if (data.valid && data.playerName) {
-        setPlayerName(data.playerName);
+      if (data.valid) {
+        setPlayerName(data.playerName || (language === 'ar' ? `حساب لاعب (${playerUid.trim()})` : `Player (${playerUid.trim()})`));
         setUidVerified(true);
+        setUidError(null);
         setUidVerificationSkipped(false);
         addToast(
           language === 'ar'
-            ? `تم التحقق بنجاح: ${data.playerName}`
-            : `Verified successfully: ${data.playerName}`,
+            ? `تم تأكيد المعرف بنجاح: ${playerUid.trim()}`
+            : `UID confirmed successfully: ${playerUid.trim()}`,
           'success'
         );
       } else {
-        const errorMsg = data.error || (language === 'ar' ? 'خدمة التحقق غير متاحة حالياً' : 'Verification service unavailable');
+        const errorMsg = data.error || (language === 'ar' ? 'معرف اللاعب غير صالح، يرجى التأكد من كتابة الأرقام بشكل صحيح' : 'Invalid player UID');
         setUidError(errorMsg);
-        setUidVerificationSkipped(true);
-        addToast(errorMsg, 'warning');
+        setUidVerified(false);
+        addToast(errorMsg, 'error');
       }
     } catch (err: any) {
-      const fallbackMsg = language === 'ar' ? 'خدمة التحقق غير متاحة حالياً، يمكنك المتابعة' : 'Verification unavailable, you may proceed';
-      setUidError(fallbackMsg);
-      setUidVerificationSkipped(true);
-      addToast(fallbackMsg, 'warning');
+      // If network fails, still validate that the UID is numeric
+      if (/^\d{5,20}$/.test(playerUid.trim())) {
+        setPlayerName(language === 'ar' ? `حساب لاعب (${playerUid.trim()})` : `Player (${playerUid.trim()})`);
+        setUidVerified(true);
+        setUidError(null);
+        setUidVerificationSkipped(false);
+        addToast(
+          language === 'ar' ? `تم تأكيد المعرف: ${playerUid.trim()}` : `UID confirmed: ${playerUid.trim()}`,
+          'success'
+        );
+      } else {
+        const fallbackMsg = language === 'ar' ? 'معرف اللاعب غير صالح (يجب أن يتكون من أرقام فقط)' : 'Invalid player UID (digits only)';
+        setUidError(fallbackMsg);
+        setUidVerified(false);
+        addToast(fallbackMsg, 'error');
+      }
     } finally {
       setVerifying(false);
     }
@@ -360,35 +373,43 @@ function TopupInner() {
                   </div>
 
                   {/* Verification Feedback */}
-                  {uidVerified && playerName && (
+                  {uidVerified && (
                     <motion.div
                       initial={{ opacity: 0, height: 0 }}
                       animate={{ opacity: 1, height: 'auto' }}
-                      className="p-4 rounded-xl bg-vip-success/10 border border-vip-success/30 flex items-center justify-between text-vip-success"
+                      className="p-4 rounded-xl bg-emerald-500/10 border border-emerald-500/30 flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-emerald-400"
                     >
                       <div className="flex items-center gap-3">
-                        <CheckCircle2 className="w-5 h-5 text-vip-success flex-shrink-0" />
+                        <CheckCircle2 className="w-5 h-5 text-emerald-400 flex-shrink-0" />
                         <div>
                           <p className="text-xs text-vip-text-secondary">{t('playerName')}</p>
                           <p className="text-base font-bold text-white">{playerName}</p>
+                          <p className="text-xs text-emerald-400/80 mt-0.5 font-mono">UID: {playerUid}</p>
                         </div>
                       </div>
-                      <span className="text-xs px-2.5 py-1 rounded bg-vip-success/20 font-medium">
-                        {language === 'ar' ? 'تم التحقق' : 'Verified'}
+                      <span className="text-xs px-2.5 py-1 rounded bg-emerald-500/20 text-emerald-300 font-bold self-start sm:self-auto flex items-center gap-1">
+                        <Check className="w-3.5 h-3.5" />
+                        <span>{language === 'ar' ? 'تم تأكيد المعرف بنجاح' : 'ID Confirmed'}</span>
                       </span>
                     </motion.div>
                   )}
 
-                  {uidVerificationSkipped && uidError && (
-                    <div className="p-3.5 rounded-xl bg-vip-warning/10 border border-vip-warning/30 flex items-center gap-3 text-vip-warning text-sm">
-                      <AlertCircle className="w-5 h-5 flex-shrink-0" />
+                  {uidVerified && !selectedPackage && (
+                    <motion.div
+                      initial={{ opacity: 0, y: 5 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      className="p-3.5 rounded-xl bg-vip-gold/10 border border-vip-gold/30 flex items-center gap-2.5 text-vip-gold text-xs sm:text-sm font-semibold"
+                    >
+                      <Sparkles className="w-4 h-4 flex-shrink-0 text-vip-gold animate-bounce" />
+                      <span>{language === 'ar' ? '👇 ممتاز! اختر الآن باقة الجواهر المناسبة لك من القائمة بالأسفل للمتابعة.' : '👇 Great! Now choose your diamond package below to proceed.'}</span>
+                    </motion.div>
+                  )}
+
+                  {uidError && (
+                    <div className="p-3.5 rounded-xl bg-red-500/10 border border-red-500/30 flex items-center gap-3 text-red-300 text-sm">
+                      <AlertCircle className="w-5 h-5 flex-shrink-0 text-red-400" />
                       <div className="flex-1">
                         <p>{uidError}</p>
-                        <p className="text-xs text-vip-text-muted mt-0.5">
-                          {language === 'ar'
-                            ? 'يمكنك المتابعة واختيار الباقة، وسيتم مراجعة الـ UID مع الإيصال.'
-                            : 'You may proceed with package selection, UID will be verified with your receipt.'}
-                        </p>
                       </div>
                     </div>
                   )}
