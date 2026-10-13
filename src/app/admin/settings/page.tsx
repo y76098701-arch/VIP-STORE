@@ -18,6 +18,9 @@ import {
   Zap,
   Phone,
   UserCheck,
+  Lock,
+  KeyRound,
+  Mail,
 } from 'lucide-react';
 import { Button } from '@/components/ui/Button';
 import { Card } from '@/components/ui/Card';
@@ -61,13 +64,32 @@ export default function AdminSettingsPage() {
   const [uidApiKey, setUidApiKey] = useState<string>('');
   const [showUidKey, setShowUidKey] = useState<boolean>(false);
 
+  // Admin Credentials State
+  const [adminEmail, setAdminEmail] = useState<string>('admin@vipstore.com');
+  const [currentPassword, setCurrentPassword] = useState<string>('');
+  const [newPassword, setNewPassword] = useState<string>('');
+  const [confirmPassword, setConfirmPassword] = useState<string>('');
+  const [updatingProfile, setUpdatingProfile] = useState<boolean>(false);
+
   // Fetch Current Settings
   const fetchSettings = useCallback(async (isManual = false) => {
     if (isManual) setLoading(true);
 
     try {
+      // 1. Fetch Store Settings
       const res = await fetch('/api/admin/settings', { cache: 'no-store' });
       if (!res.ok) throw new Error('Failed to fetch settings');
+
+      // 2. Fetch Admin Profile
+      try {
+        const profRes = await fetch('/api/admin/profile', { cache: 'no-store' });
+        if (profRes.ok) {
+          const profData = await profRes.json();
+          if (profData.admin?.email) setAdminEmail(profData.admin.email);
+        }
+      } catch (e) {
+        // Ignore if profile route not ready
+      }
 
       const data: Record<string, string> = await res.json();
 
@@ -163,6 +185,62 @@ export default function AdminSettingsPage() {
     }
   };
 
+  const handleUpdateProfile = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!currentPassword) {
+      addToast(
+        isArabic ? 'يرجى كتابة كلمة المرور الحالية لتأكيد التغيير' : 'Please enter your current password',
+        'error'
+      );
+      return;
+    }
+    if (newPassword && newPassword !== confirmPassword) {
+      addToast(
+        isArabic ? 'كلمة المرور الجديدة غير متطابقة' : 'New passwords do not match',
+        'error'
+      );
+      return;
+    }
+    if (newPassword && newPassword.length < 6) {
+      addToast(
+        isArabic ? 'يجب أن تتكون كلمة المرور من 6 أحرف على الأقل' : 'Password must be at least 6 characters',
+        'error'
+      );
+      return;
+    }
+
+    setUpdatingProfile(true);
+    try {
+      const res = await fetch('/api/admin/profile', {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          email: adminEmail,
+          currentPassword,
+          newPassword: newPassword || undefined,
+        }),
+      });
+
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || 'Failed to update credentials');
+
+      addToast(
+        isArabic ? 'تم تحديث بيانات حساب الإدارة بنجاح!' : 'Admin credentials updated successfully!',
+        'success'
+      );
+      setCurrentPassword('');
+      setNewPassword('');
+      setConfirmPassword('');
+    } catch (err: any) {
+      addToast(
+        err.message || (isArabic ? 'فشل التحديث' : 'Update failed'),
+        'error'
+      );
+    } finally {
+      setUpdatingProfile(false);
+    }
+  };
+
   const isLiveConfigured = Boolean(providerUrl.trim()) && Boolean(providerApiKey.trim());
 
   if (loading) {
@@ -219,6 +297,108 @@ export default function AdminSettingsPage() {
           </Button>
         </div>
       </div>
+
+      {/* Admin Account & Security Card */}
+      <Card hover={false} glow="none" className="p-6 bg-vip-card/90 border border-vip-purple/30 shadow-xl">
+        <div className="flex items-center gap-3 mb-5 border-b border-vip-border/60 pb-3">
+          <div className="w-9 h-9 rounded-xl bg-vip-purple/15 border border-vip-purple/30 flex items-center justify-center text-vip-purple-light">
+            <KeyRound className="w-5 h-5" />
+          </div>
+          <div>
+            <h2 className="text-base font-bold text-vip-text-primary">
+              {isArabic ? 'بيانات دخول وأمان الأدمن (البريد وكلمة المرور)' : 'Admin Login Credentials & Security'}
+            </h2>
+            <p className="text-xs text-vip-text-muted">
+              {isArabic
+                ? 'تغيير البريد الإلكتروني وكلمة المرور الخاصة بلوحة تحكم المتجر'
+                : 'Change your admin email and password'}
+            </p>
+          </div>
+        </div>
+
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div>
+            <label className="block text-xs font-semibold text-vip-text-secondary mb-1.5">
+              {isArabic ? 'البريد الإلكتروني للوحة التحكم' : 'Admin Email'}
+            </label>
+            <div className="relative">
+              <Input
+                type="email"
+                value={adminEmail}
+                onChange={(e) => setAdminEmail(e.target.value)}
+                placeholder="admin@vipstore.com"
+                disabled={updatingProfile}
+                className="ps-9"
+              />
+              <Mail className="w-4 h-4 absolute start-3 top-1/2 -translate-y-1/2 text-vip-text-muted" />
+            </div>
+          </div>
+
+          <div>
+            <label className="block text-xs font-semibold text-vip-text-secondary mb-1.5">
+              {isArabic ? 'كلمة المرور الحالية (مطلوبة للتأكيد)' : 'Current Password (Required)'}
+            </label>
+            <div className="relative">
+              <Input
+                type="password"
+                value={currentPassword}
+                onChange={(e) => setCurrentPassword(e.target.value)}
+                placeholder="••••••••••••"
+                disabled={updatingProfile}
+                className="ps-9"
+              />
+              <Lock className="w-4 h-4 absolute start-3 top-1/2 -translate-y-1/2 text-vip-text-muted" />
+            </div>
+          </div>
+
+          <div>
+            <label className="block text-xs font-semibold text-vip-text-secondary mb-1.5">
+              {isArabic ? 'كلمة المرور الجديدة (اختياري)' : 'New Password (Optional)'}
+            </label>
+            <div className="relative">
+              <Input
+                type="password"
+                value={newPassword}
+                onChange={(e) => setNewPassword(e.target.value)}
+                placeholder="••••••••••••"
+                disabled={updatingProfile}
+                className="ps-9"
+              />
+              <KeyRound className="w-4 h-4 absolute start-3 top-1/2 -translate-y-1/2 text-vip-text-muted" />
+            </div>
+          </div>
+
+          <div>
+            <label className="block text-xs font-semibold text-vip-text-secondary mb-1.5">
+              {isArabic ? 'تأكيد كلمة المرور الجديدة' : 'Confirm New Password'}
+            </label>
+            <div className="relative">
+              <Input
+                type="password"
+                value={confirmPassword}
+                onChange={(e) => setConfirmPassword(e.target.value)}
+                placeholder="••••••••••••"
+                disabled={updatingProfile}
+                className="ps-9"
+              />
+              <KeyRound className="w-4 h-4 absolute start-3 top-1/2 -translate-y-1/2 text-vip-text-muted" />
+            </div>
+          </div>
+        </div>
+
+        <div className="mt-5 flex justify-end">
+          <Button
+            type="button"
+            onClick={handleUpdateProfile}
+            variant="secondary"
+            loading={updatingProfile}
+            className="px-6 border border-vip-purple/40 text-vip-purple-light hover:bg-vip-purple/20 font-bold"
+          >
+            <Save className="w-4 h-4 me-1.5" />
+            <span>{isArabic ? 'تحديث وتغيير بيانات الدخول' : 'Update Credentials'}</span>
+          </Button>
+        </div>
+      </Card>
 
       <form onSubmit={handleSaveAll} className="space-y-6">
         {/* Section 1: Payment Settings */}
