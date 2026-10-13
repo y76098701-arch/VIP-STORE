@@ -41,8 +41,6 @@ export default function AdminSettingsPage() {
   // Payment Form Fields
   const [instapayName, setInstapayName] = useState<string>('VIP STORE');
   const [instapayNumber, setInstapayNumber] = useState<string>('01069954152');
-  const [daqanCashName, setDaqanCashName] = useState<string>('VIP STORE - دكان كاش');
-  const [daqanCashNumber, setDaqanCashNumber] = useState<string>('01069954152');
   const [transferPhone, setTransferPhone] = useState<string>('01069954152');
   const [vodafoneCashNumber, setVodafoneCashNumber] = useState<string>('01069954152');
 
@@ -95,8 +93,6 @@ export default function AdminSettingsPage() {
 
       if (data.instapay_name !== undefined) setInstapayName(data.instapay_name);
       if (data.instapay_number !== undefined) setInstapayNumber(data.instapay_number);
-      if (data.daqan_cash_name !== undefined) setDaqanCashName(data.daqan_cash_name);
-      if (data.daqan_cash_number !== undefined) setDaqanCashNumber(data.daqan_cash_number);
       if (data.transfer_phone !== undefined) setTransferPhone(data.transfer_phone);
       if (data.vodafone_cash_number !== undefined) setVodafoneCashNumber(data.vodafone_cash_number);
 
@@ -143,8 +139,6 @@ export default function AdminSettingsPage() {
         settings: [
           { key: 'instapay_name', value: instapayName.trim() },
           { key: 'instapay_number', value: instapayNumber.trim() },
-          { key: 'daqan_cash_name', value: daqanCashName.trim() },
-          { key: 'daqan_cash_number', value: daqanCashNumber.trim() },
           { key: 'transfer_phone', value: transferPhone.trim() },
           { key: 'vodafone_cash_number', value: vodafoneCashNumber.trim() },
           { key: 'first_order_discount', value: String(firstOrderDiscount).trim() },
@@ -267,8 +261,8 @@ export default function AdminSettingsPage() {
           </h1>
           <p className="text-xs sm:text-sm text-vip-text-secondary mt-1">
             {isArabic
-              ? 'تخصيص أرقام التحويل، دكان كاش، إنستاباي، نسب الخصومات ومزود الشحن التلقائي'
-              : 'Configure payment accounts, DaQan cash, discount rates, and top-up provider API'}
+              ? 'تخصيص أرقام التحويل، إنستاباي، فودافون كاش، نسب الخصومات ومزود الشحن التلقائي'
+              : 'Configure payment accounts, InstaPay, Vodafone Cash, discount rates, and top-up provider API'}
           </p>
         </div>
 
@@ -440,7 +434,6 @@ export default function AdminSettingsPage() {
                   onChange={(e) => {
                     setTransferPhone(e.target.value);
                     setInstapayNumber(e.target.value);
-                    setDaqanCashNumber(e.target.value);
                     setVodafoneCashNumber(e.target.value);
                   }}
                   placeholder="01069954152"
@@ -474,35 +467,6 @@ export default function AdminSettingsPage() {
                 type="text"
                 value={instapayNumber}
                 onChange={(e) => setInstapayNumber(e.target.value)}
-                placeholder="01069954152"
-                disabled={saving}
-                required
-              />
-            </div>
-
-            {/* DaQan Cash Name & Number */}
-            <div>
-              <label className="block text-xs font-semibold text-vip-text-secondary mb-1.5">
-                {isArabic ? 'اسم خدمة دكان كاش / دقهلية كاش' : 'DaQan Cash / Dakahlia Cash Name'}
-              </label>
-              <Input
-                type="text"
-                value={daqanCashName}
-                onChange={(e) => setDaqanCashName(e.target.value)}
-                placeholder="VIP STORE - دكان كاش"
-                disabled={saving}
-                required
-              />
-            </div>
-
-            <div>
-              <label className="block text-xs font-semibold text-vip-text-secondary mb-1.5">
-                {isArabic ? 'رقم محفظة دكان كاش / دقهلية كاش' : 'DaQan Cash Number'}
-              </label>
-              <Input
-                type="text"
-                value={daqanCashNumber}
-                onChange={(e) => setDaqanCashNumber(e.target.value)}
                 placeholder="01069954152"
                 disabled={saving}
                 required

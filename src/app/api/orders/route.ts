@@ -3,6 +3,8 @@ import { z } from 'zod';
 import { prisma } from '@/lib/db';
 import { calculateDiscount, markFirstOrderUsed } from '@/lib/discount';
 import { generateOrderNumber, generatePaymentRef } from '@/lib/utils';
+import { saveOrderToMemory } from '@/lib/orders-store';
+import type { OrderStatus, OrderTrackingResult } from '@/types';
 
 export const dynamic = 'force-dynamic';
 
@@ -14,9 +16,10 @@ const createOrderSchema = z.object({
     .max(20, 'Player UID must be at most 20 characters'),
   playerName: z.string().trim().optional().nullable(),
   packageId: z.string().min(1, 'Package ID is required'),
-  paymentMethod: z.enum(['instapay', 'daqan_cash', 'vodafone_cash'], {
-    errorMap: () => ({ message: 'Payment method must be instapay, daqan_cash, or vodafone_cash' }),
+  paymentMethod: z.enum(['instapay', 'vodafone_cash'], {
+    errorMap: () => ({ message: 'Payment method must be instapay or vodafone_cash' }),
   }),
+  selectedDiscount: z.number().optional(),
 });
 
 export async function POST(request: NextRequest) {
@@ -34,22 +37,61 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    const { playerUid, playerName, packageId, paymentMethod } = parseResult.data;
+    const { playerUid, playerName, packageId, paymentMethod, selectedDiscount } = parseResult.data;
 
     // Verify package exists and is active
-    const pkg = await prisma.diamondPackage.findUnique({
+    let pkg = await prisma.diamondPackage.findUnique({
       where: { id: packageId },
     });
 
-    if (!pkg || !pkg.isActive) {
+    // Fallback if packageId is package diamonds or fallback id
+    if (!pkg) {
+      pkg = await prisma.diamondPackage.findFirst({
+        where: {
+          OR: [
+            { id: packageId },
+            { diamonds: parseInt(packageId, 10) || 0 },
+          ],
+        },
+      });
+    }
+
+    if (!pkg) {
+      // Create fallback package if not seeded yet
+      const fallbackPrices: Record<number, number> = {
+        100: 25,
+        310: 75,
+        520: 125,
+        1060: 250,
+        2180: 500,
+        5600: 1250,
+      };
+      const diamonds = parseInt(packageId, 10) || 100;
+      const price = fallbackPrices[diamonds] || 25;
+
+      try {
+        pkg = await prisma.diamondPackage.create({
+          data: {
+            diamonds,
+            price,
+            currency: 'EGP',
+            isActive: true,
+          },
+        });
+      } catch (e) {
+        pkg = await prisma.diamondPackage.findFirst();
+      }
+    }
+
+    if (!pkg) {
       return NextResponse.json(
         { error: 'Selected diamond package was not found or is unavailable' },
         { status: 404 }
       );
     }
 
-    // Calculate server-side discount
-    const discount = await calculateDiscount(playerUid, pkg.price);
+    // Calculate server-side discount respecting customer's choice and UID eligibility
+    const discount = await calculateDiscount(playerUid, pkg.price, selectedDiscount);
 
     // Generate unique order number and payment reference
     const orderNumber = generateOrderNumber();
@@ -83,10 +125,31 @@ export async function POST(request: NextRequest) {
       },
     });
 
-    // If first order discount was applied, mark it as used for this UID
-    if (discount.isFirstOrder) {
+    // If 50% discount was used, permanently mark it as used for this UID
+    if (discount.discountPercent >= 50 || discount.isFirstOrder) {
       await markFirstOrderUsed(playerUid, order.id);
     }
+
+    // Cache order in serverless memory backup store
+    const trackingItem: OrderTrackingResult = {
+      orderNumber: order.orderNumber,
+      playerUid: order.playerUid,
+      playerName: order.playerName,
+      diamonds: pkg.diamonds,
+      originalPrice: order.originalPrice,
+      discountAmount: order.discountAmount,
+      finalPrice: order.finalPrice,
+      status: order.status as OrderStatus,
+      paymentMethod: order.paymentMethod,
+      createdAt: order.createdAt.toISOString(),
+      statusHistory: order.statusHistory.map((h) => ({
+        id: h.id,
+        status: h.status as OrderStatus,
+        note: h.note,
+        createdAt: h.createdAt.toISOString(),
+      })),
+    };
+    saveOrderToMemory(trackingItem);
 
     return NextResponse.json(
       {

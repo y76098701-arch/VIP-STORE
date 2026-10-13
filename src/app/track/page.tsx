@@ -105,11 +105,80 @@ function TrackInner() {
   const [loading, setLoading] = useState<boolean>(false);
   const [hasSearched, setHasSearched] = useState<boolean>(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
+  const [recentOrders, setRecentOrders] = useState<any[]>([]);
+
+  // Load recent orders from localStorage
+  useEffect(() => {
+    try {
+      const stored = localStorage.getItem('vip_orders');
+      if (stored) {
+        const list = JSON.parse(stored);
+        if (Array.isArray(list)) setRecentOrders(list);
+      }
+    } catch (e) {
+      // Ignore localStorage errors
+    }
+  }, []);
+
+  const findInLocalStorage = (query: string): OrderTrackingResult | null => {
+    try {
+      const q = query.trim().toUpperCase();
+      const stored = localStorage.getItem('vip_orders');
+      if (!stored) return null;
+      const list = JSON.parse(stored);
+      if (!Array.isArray(list)) return null;
+
+      const found = list.find(
+        (o: any) =>
+          o.orderNumber?.toUpperCase() === q ||
+          o.orderNumber?.toUpperCase() === `VIP-${q}` ||
+          o.playerUid === query.trim()
+      );
+
+      if (found) {
+        return {
+          orderNumber: found.orderNumber,
+          playerUid: found.playerUid,
+          playerName: found.playerName,
+          diamonds: found.diamonds || found.package?.diamonds || 100,
+          originalPrice: found.originalPrice,
+          discountAmount: found.discountAmount,
+          finalPrice: found.finalPrice,
+          status: found.status as OrderStatus,
+          paymentMethod: found.paymentMethod,
+          createdAt: found.createdAt || new Date().toISOString(),
+          statusHistory: found.statusHistory || [
+            {
+              id: 'local-1',
+              status: found.status || 'PENDING_PAYMENT',
+              note: 'Order registered',
+              createdAt: found.createdAt || new Date().toISOString(),
+            },
+          ],
+        };
+      }
+    } catch (e) {
+      console.warn('Error reading from localStorage:', e);
+    }
+    return null;
+  };
+
+  const syncOrderToServer = async (ord: OrderTrackingResult) => {
+    try {
+      await fetch('/api/orders/sync', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ order: ord }),
+      });
+    } catch (e) {
+      // background sync silently
+    }
+  };
 
   const fetchTracking = async (query: string) => {
     const trimmed = query.trim();
     if (!trimmed) {
-      setErrorMessage(language === 'ar' ? 'يرجى إدخال رقم الطلب للبحث' : 'Please enter an order number');
+      setErrorMessage(language === 'ar' ? 'يرجى إدخال رقم الطلب أو معرف اللاعب للبحث' : 'Please enter an order number or player UID');
       return;
     }
 
@@ -123,6 +192,14 @@ function TrackInner() {
 
       if (!res.ok) {
         if (res.status === 404) {
+          // Check local storage fallback
+          const localOrder = findInLocalStorage(trimmed);
+          if (localOrder) {
+            setOrder(localOrder);
+            syncOrderToServer(localOrder);
+            router.replace(`/track?orderNumber=${encodeURIComponent(localOrder.orderNumber)}`);
+            return;
+          }
           setOrder(null);
           setErrorMessage(t('orderNotFound'));
         } else {
@@ -133,9 +210,14 @@ function TrackInner() {
 
       const resultOrder = data.order || data;
       setOrder(resultOrder);
-      // Update browser URL query without reload
       router.replace(`/track?orderNumber=${encodeURIComponent(trimmed)}`);
     } catch (err: any) {
+      // If network error, check local storage
+      const localOrder = findInLocalStorage(trimmed);
+      if (localOrder) {
+        setOrder(localOrder);
+        return;
+      }
       console.error(err);
       setOrder(null);
       setErrorMessage(err.message || t('orderNotFound'));
@@ -187,8 +269,8 @@ function TrackInner() {
             <div className="flex flex-col sm:flex-row gap-3">
               <div className="flex-grow">
                 <Input
-                  label={t('orderNumber')}
-                  placeholder="VIP-XXXXXXXX"
+                  label={language === 'ar' ? 'رقم الطلب أو معرف اللاعب (Player UID)' : 'Order Number or Player UID'}
+                  placeholder={language === 'ar' ? 'مثال: VIP-XXXXXXXX أو معرف اللاعب' : 'e.g. VIP-XXXXXXXX or Player UID'}
                   value={orderQuery}
                   onChange={(e) => {
                     setOrderQuery(e.target.value);
@@ -211,6 +293,34 @@ function TrackInner() {
                 </Button>
               </div>
             </div>
+
+            {/* Quick access to saved recent orders */}
+            {recentOrders.length > 0 && (
+              <div className="pt-3 border-t border-vip-border/60">
+                <span className="text-xs text-vip-text-muted block mb-2 font-medium">
+                  {language === 'ar' ? '⚡ طلباتك السابقة على هذا الجهاز (انقر للفتح مباشرة):' : '⚡ Your recent orders on this device:'}
+                </span>
+                <div className="flex flex-wrap gap-2">
+                  {recentOrders.slice(0, 5).map((rec: any) => (
+                    <button
+                      key={rec.orderNumber}
+                      type="button"
+                      onClick={() => {
+                        setOrderQuery(rec.orderNumber);
+                        fetchTracking(rec.orderNumber);
+                      }}
+                      className="text-xs px-2.5 py-1.5 rounded-lg bg-vip-purple/10 border border-vip-purple/30 text-vip-purple-light hover:bg-vip-purple/20 transition-all font-mono flex items-center gap-1.5"
+                    >
+                      <Gem className="w-3 h-3 text-vip-gold" />
+                      <span className="font-bold">{rec.orderNumber}</span>
+                      <span className="text-[10px] text-vip-text-muted">
+                        ({rec.diamonds || 100}💎)
+                      </span>
+                    </button>
+                  ))}
+                </div>
+              </div>
+            )}
           </form>
         </Card>
 

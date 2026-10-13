@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { z } from 'zod';
 import { verifyPlayerUid } from '@/lib/topup-provider';
+import { checkUidEligibility } from '@/lib/discount';
 
 export const dynamic = 'force-dynamic';
 
@@ -27,9 +28,15 @@ export async function POST(request: NextRequest) {
     }
 
     const { uid } = parseResult.data;
-    const result = await verifyPlayerUid(uid);
+    const [providerResult, eligibility] = await Promise.all([
+      verifyPlayerUid(uid),
+      checkUidEligibility(uid),
+    ]);
 
-    return NextResponse.json(result);
+    return NextResponse.json({
+      ...providerResult,
+      hasUsed50Discount: eligibility.hasUsed50Discount,
+    });
   } catch (error: any) {
     console.error('Error verifying player UID:', error);
     return NextResponse.json(

@@ -69,6 +69,19 @@ function CheckoutInner() {
         const res = await fetch(`/api/track?orderNumber=${encodeURIComponent(orderNumber!)}`);
         if (!res.ok) {
           if (res.status === 404) {
+            // Check local storage fallback
+            try {
+              const stored = localStorage.getItem('vip_orders');
+              if (stored) {
+                const list = JSON.parse(stored);
+                const found = list.find((o: any) => o.orderNumber === orderNumber);
+                if (found) {
+                  setOrder(found);
+                  if (found.status !== 'PENDING_PAYMENT') setReceiptUploaded(true);
+                  return;
+                }
+              }
+            } catch (e) {}
             throw new Error(t('orderNotFound'));
           }
           throw new Error(language === 'ar' ? 'فشل تحميل بيانات الطلب' : 'Failed to fetch order details');
@@ -81,6 +94,19 @@ function CheckoutInner() {
           setReceiptUploaded(true);
         }
       } catch (err: any) {
+        // Fallback on error
+        try {
+          const stored = localStorage.getItem('vip_orders');
+          if (stored) {
+            const list = JSON.parse(stored);
+            const found = list.find((o: any) => o.orderNumber === orderNumber);
+            if (found) {
+              setOrder(found);
+              if (found.status !== 'PENDING_PAYMENT') setReceiptUploaded(true);
+              return;
+            }
+          }
+        } catch (e) {}
         console.error(err);
         setError(err.message || t('error'));
       } finally {

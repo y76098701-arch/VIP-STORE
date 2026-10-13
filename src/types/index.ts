@@ -7,7 +7,7 @@ export type OrderStatus =
   | 'REJECTED'
   | 'REFUNDED';
 
-export type PaymentMethod = 'instapay' | 'daqan_cash' | 'vodafone_cash';
+export type PaymentMethod = 'instapay' | 'vodafone_cash';
 export type Language = 'ar' | 'en';
 
 export interface DiamondPackage {

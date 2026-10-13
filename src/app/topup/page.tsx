@@ -18,6 +18,8 @@ import {
   RefreshCw,
   ExternalLink,
   Flame,
+  Lock,
+  Percent,
 } from 'lucide-react';
 
 import Navbar from '@/components/layout/Navbar';
@@ -51,14 +53,17 @@ function TopupInner() {
   const [uidVerified, setUidVerified] = useState<boolean>(false);
   const [uidError, setUidError] = useState<string | null>(null);
   const [verifying, setVerifying] = useState<boolean>(false);
-  const [uidVerificationSkipped, setUidVerificationSkipped] = useState<boolean>(false);
+
+  // Discount Selection: customer chooses 50% or 20%
+  const [selectedDiscount, setSelectedDiscount] = useState<50 | 20>(50);
+  const [hasUsed50Discount, setHasUsed50Discount] = useState<boolean>(false);
 
   // Packages state
   const [packages, setPackages] = useState<DiamondPackage[]>([]);
   const [loadingPackages, setLoadingPackages] = useState<boolean>(true);
   const [selectedPackage, setSelectedPackage] = useState<DiamondPackage | null>(null);
 
-  // Payment method
+  // Payment method: only instapay or vodafone_cash
   const [paymentMethod, setPaymentMethod] = useState<PaymentMethod | null>(null);
 
   // Order submission
@@ -99,7 +104,7 @@ function TopupInner() {
     fetchPackages();
   }, [searchParams, language]);
 
-  // Handle UID verification
+  // Handle UID verification and check if 50% was already used
   const handleVerifyUid = async () => {
     if (!playerUid.trim()) {
       setUidError(language === 'ar' ? 'يرجى إدخال معرف اللاعب أولاً' : 'Please enter Player UID first');
@@ -124,13 +129,27 @@ function TopupInner() {
         setPlayerName(data.playerName || (language === 'ar' ? `حساب لاعب (${playerUid.trim()})` : `Player (${playerUid.trim()})`));
         setUidVerified(true);
         setUidError(null);
-        setUidVerificationSkipped(false);
-        addToast(
-          language === 'ar'
-            ? `تم تأكيد المعرف بنجاح: ${playerUid.trim()}`
-            : `UID confirmed successfully: ${playerUid.trim()}`,
-          'success'
-        );
+
+        // Check if 50% discount was already used
+        if (data.hasUsed50Discount) {
+          setHasUsed50Discount(true);
+          setSelectedDiscount(20);
+          addToast(
+            language === 'ar'
+              ? 'تم التحقق من الحساب: تم استخدام خصم 50% مسبقاً، تم تفعيل خصم 20% الدائم مدى الحياة!'
+              : 'UID confirmed: 50% discount already used, 20% permanent discount applied!',
+            'info'
+          );
+        } else {
+          setHasUsed50Discount(false);
+          setSelectedDiscount(50);
+          addToast(
+            language === 'ar'
+              ? `تم تأكيد المعرف بنجاح (${playerUid.trim()}) - مؤهل لخصم 50% الترحيبي!`
+              : `UID confirmed (${playerUid.trim()}) - Eligible for 50% discount!`,
+            'success'
+          );
+        }
       } else {
         const errorMsg = data.error || (language === 'ar' ? 'معرف اللاعب غير صالح، يرجى التأكد من كتابة الأرقام بشكل صحيح' : 'Invalid player UID');
         setUidError(errorMsg);
@@ -138,12 +157,10 @@ function TopupInner() {
         addToast(errorMsg, 'error');
       }
     } catch (err: any) {
-      // If network fails, still validate that the UID is numeric
       if (/^\d{5,20}$/.test(playerUid.trim())) {
         setPlayerName(language === 'ar' ? `حساب لاعب (${playerUid.trim()})` : `Player (${playerUid.trim()})`);
         setUidVerified(true);
         setUidError(null);
-        setUidVerificationSkipped(false);
         addToast(
           language === 'ar' ? `تم تأكيد المعرف: ${playerUid.trim()}` : `UID confirmed: ${playerUid.trim()}`,
           'success'
@@ -193,6 +210,7 @@ function TopupInner() {
           playerName: playerName || undefined,
           packageId: selectedPackage.id,
           paymentMethod,
+          selectedDiscount,
         }),
       });
 
@@ -202,7 +220,19 @@ function TopupInner() {
         throw new Error(data.error || (language === 'ar' ? 'فشل إنشاء الطلب' : 'Failed to create order'));
       }
 
-      setOrderResult(data.order || data);
+      const createdOrder = data.order || data;
+      setOrderResult(createdOrder);
+
+      // Save order in localStorage so it can never be lost on tracking search
+      try {
+        const existing = JSON.parse(localStorage.getItem('vip_orders') || '[]');
+        const updated = [createdOrder, ...existing.filter((o: any) => o.orderNumber !== createdOrder.orderNumber)].slice(0, 20);
+        localStorage.setItem('vip_orders', JSON.stringify(updated));
+        localStorage.setItem('vip_latest_order', JSON.stringify(createdOrder));
+      } catch (e) {
+        console.warn('Failed to store order in localStorage:', e);
+      }
+
       setStep(3);
       window.scrollTo({ top: 0, behavior: 'smooth' });
       addToast(t('orderPlaced'), 'success');
@@ -248,8 +278,15 @@ function TopupInner() {
     }
   };
 
+  // Helper calculation for package prices given selectedDiscount
+  const calcDiscountedPrice = (origPrice: number) => {
+    const rate = selectedDiscount / 100;
+    const discount = Math.round(origPrice * rate * 100) / 100;
+    return Math.max(0, Math.round((origPrice - discount) * 100) / 100);
+  };
+
   const stepsMeta = [
-    { num: 1, title: language === 'ar' ? 'معرف اللاعب والباقة' : 'UID & Package' },
+    { num: 1, title: language === 'ar' ? 'المعرف والباقة والخصم' : 'UID, Package & Discount' },
     { num: 2, title: language === 'ar' ? 'المراجعة والدفع' : 'Review & Payment' },
     { num: 3, title: language === 'ar' ? 'التأكيد والإيصال' : 'Confirm & Receipt' },
   ];
@@ -301,7 +338,7 @@ function TopupInner() {
 
         {/* Wizard Steps */}
         <AnimatePresence mode="wait">
-          {/* STEP 1: Enter UID & Select Package */}
+          {/* STEP 1: Enter UID, Choose Discount, Select Package */}
           {step === 1 && (
             <motion.div
               key="step-1"
@@ -311,35 +348,20 @@ function TopupInner() {
               transition={{ duration: 0.3 }}
               className="space-y-8"
             >
-              {/* Promotional Banner */}
-              <div className="relative overflow-hidden rounded-2xl bg-gradient-to-r from-vip-purple/20 via-vip-blue/20 to-vip-purple/10 border border-vip-purple/40 p-5 flex items-center justify-between shadow-[0_0_25px_rgba(124,58,237,0.15)]">
-                <div className="flex items-center gap-4">
-                  <div className="p-3 bg-vip-gold/10 rounded-xl text-vip-gold border border-vip-gold/30">
-                    <Flame className="w-7 h-7 animate-pulse text-vip-gold" />
-                  </div>
-                  <div>
-                    <h3 className="font-extrabold text-lg text-white flex items-center gap-2">
-                      <span>{language === 'ar' ? 'عرض خاص للعملاء الجدد!' : 'Special New Customer Offer!'}</span>
-                      <span className="px-2.5 py-0.5 rounded-full text-xs font-bold bg-vip-gold text-black">50% OFF</span>
-                    </h3>
-                    <p className="text-sm text-vip-text-secondary mt-0.5">
-                      {language === 'ar'
-                        ? 'خصم 50% يطبق تلقائياً على أول عملية شحن لحسابك! وخصم 20% للطلبات المتكررة.'
-                        : '50% discount applies automatically to your first top-up! 20% discount on subsequent orders.'}
-                    </p>
-                  </div>
-                </div>
-              </div>
-
               {/* UID Input Section */}
               <Card className="p-6 md:p-8 neon-border">
                 <div className="flex items-center gap-3 mb-6">
                   <div className="w-8 h-8 rounded-lg bg-vip-purple/20 flex items-center justify-center text-vip-purple">
                     <ShieldCheck className="w-5 h-5" />
                   </div>
-                  <h2 className="text-xl font-bold text-white">
-                    {language === 'ar' ? '1. إدخال معرف اللاعب (Player UID)' : '1. Enter Player UID'}
-                  </h2>
+                  <div>
+                    <h2 className="text-xl font-bold text-white">
+                      {language === 'ar' ? '1. إدخال معرف اللاعب (Free Fire UID)' : '1. Enter Player UID'}
+                    </h2>
+                    <p className="text-xs text-vip-text-secondary mt-0.5">
+                      {language === 'ar' ? 'أدخل الـ ID الخاص بك للتحقق من الحساب وأهلية العرض الترحيبي' : 'Enter your UID to check account and discount eligibility'}
+                    </p>
+                  </div>
                 </div>
 
                 <div className="space-y-4">
@@ -394,17 +416,6 @@ function TopupInner() {
                     </motion.div>
                   )}
 
-                  {uidVerified && !selectedPackage && (
-                    <motion.div
-                      initial={{ opacity: 0, y: 5 }}
-                      animate={{ opacity: 1, y: 0 }}
-                      className="p-3.5 rounded-xl bg-vip-gold/10 border border-vip-gold/30 flex items-center gap-2.5 text-vip-gold text-xs sm:text-sm font-semibold"
-                    >
-                      <Sparkles className="w-4 h-4 flex-shrink-0 text-vip-gold animate-bounce" />
-                      <span>{language === 'ar' ? '👇 ممتاز! اختر الآن باقة الجواهر المناسبة لك من القائمة بالأسفل للمتابعة.' : '👇 Great! Now choose your diamond package below to proceed.'}</span>
-                    </motion.div>
-                  )}
-
                   {uidError && (
                     <div className="p-3.5 rounded-xl bg-red-500/10 border border-red-500/30 flex items-center gap-3 text-red-300 text-sm">
                       <AlertCircle className="w-5 h-5 flex-shrink-0 text-red-400" />
@@ -416,7 +427,149 @@ function TopupInner() {
                 </div>
               </Card>
 
-              {/* Package Selection Section */}
+              {/* Customer Discount Selector Section */}
+              <Card className="p-6 md:p-8 neon-border bg-gradient-to-br from-vip-card via-[#151228] to-vip-card">
+                <div className="flex items-center gap-3 mb-5">
+                  <div className="w-8 h-8 rounded-lg bg-vip-gold/20 flex items-center justify-center text-vip-gold">
+                    <Percent className="w-5 h-5" />
+                  </div>
+                  <div>
+                    <h2 className="text-xl font-bold text-white">
+                      {language === 'ar' ? '2. اختر الخصم الذي تريده' : '2. Choose Your Discount'}
+                    </h2>
+                    <p className="text-xs text-vip-text-secondary">
+                      {language === 'ar'
+                        ? 'اختر العرض المناسب لك: خصم 50% لمرة واحدة لأول طلب، أو خصم 20% دائم مدى الحياة'
+                        : 'Select your offer: 50% one-time welcome discount or 20% permanent lifetime discount'}
+                    </p>
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  {/* Option 1: 50% Discount (One-time use) */}
+                  <div
+                    onClick={() => {
+                      if (!hasUsed50Discount) {
+                        setSelectedDiscount(50);
+                      } else {
+                        addToast(
+                          language === 'ar'
+                            ? 'تم استخدام خصم 50% مسبقاً لهذا الحساب، يمكنك الاستفادة من خصم 20% الدائم مدى الحياة!'
+                            : '50% discount has already been used for this UID. Use 20% permanent discount!',
+                          'warning'
+                        );
+                      }
+                    }}
+                    className={cn(
+                      'relative p-5 rounded-2xl border transition-all duration-300 flex flex-col justify-between overflow-hidden',
+                      hasUsed50Discount
+                        ? 'opacity-60 bg-vip-bg/50 border-vip-border cursor-not-allowed'
+                        : selectedDiscount === 50
+                        ? 'bg-vip-card-hover border-vip-gold shadow-[0_0_25px_rgba(234,179,8,0.3)] ring-2 ring-vip-gold/40 cursor-pointer scale-[1.01]'
+                        : 'bg-vip-card border-vip-border hover:border-vip-border-light cursor-pointer hover:bg-vip-card-hover'
+                    )}
+                  >
+                    {/* Badge */}
+                    <div className="flex items-center justify-between mb-3">
+                      <span
+                        className={cn(
+                          'text-xs font-bold px-2.5 py-0.5 rounded-full flex items-center gap-1',
+                          hasUsed50Discount
+                            ? 'bg-red-500/20 text-red-300 border border-red-500/30'
+                            : 'bg-vip-gold text-black'
+                        )}
+                      >
+                        {hasUsed50Discount ? (
+                          <>
+                            <Lock className="w-3 h-3" />
+                            <span>{language === 'ar' ? 'مستخدم مسبقاً' : 'Already Used'}</span>
+                          </>
+                        ) : (
+                          <>
+                            <Flame className="w-3 h-3" />
+                            <span>{language === 'ar' ? 'الأوفر (مرة واحدة)' : 'Best Value (1x)'}</span>
+                          </>
+                        )}
+                      </span>
+
+                      <div
+                        className={cn(
+                          'w-6 h-6 rounded-full border flex items-center justify-center transition-colors',
+                          selectedDiscount === 50 && !hasUsed50Discount
+                            ? 'bg-vip-gold border-vip-gold text-black'
+                            : 'border-vip-border text-transparent'
+                        )}
+                      >
+                        <Check className="w-3.5 h-3.5 font-bold" />
+                      </div>
+                    </div>
+
+                    <div>
+                      <div className="flex items-baseline gap-2 mb-1">
+                        <span className="text-3xl font-black text-white">50%</span>
+                        <span className="text-base font-bold text-vip-gold">
+                          {language === 'ar' ? 'خصم الطلب الأول' : 'First Order Discount'}
+                        </span>
+                      </div>
+                      <p className="text-xs text-vip-text-secondary leading-relaxed">
+                        {hasUsed50Discount
+                          ? language === 'ar'
+                            ? 'لقد تم استهلاك هذا العرض مسبقاً لهذا الـ UID. متاح لمرة واحدة فقط لكل لاعب.'
+                            : 'This offer was already redeemed for this UID. Valid only once per player.'
+                          : language === 'ar'
+                          ? 'خصم 50% يطبق لمرة واحدة فقط على هذا المعرف. فرصة لشحن ضعف الجواهر بنصف السعر!'
+                          : '50% off valid once per UID. Double diamonds for half price!'}
+                      </p>
+                    </div>
+                  </div>
+
+                  {/* Option 2: 20% Permanent Discount */}
+                  <div
+                    onClick={() => setSelectedDiscount(20)}
+                    className={cn(
+                      'relative p-5 rounded-2xl border transition-all duration-300 flex flex-col justify-between overflow-hidden cursor-pointer',
+                      selectedDiscount === 20
+                        ? 'bg-vip-card-hover border-vip-purple shadow-[0_0_25px_rgba(124,58,237,0.3)] ring-2 ring-vip-purple/40 scale-[1.01]'
+                        : 'bg-vip-card border-vip-border hover:border-vip-border-light hover:bg-vip-card-hover'
+                    )}
+                  >
+                    {/* Badge */}
+                    <div className="flex items-center justify-between mb-3">
+                      <span className="text-xs font-bold px-2.5 py-0.5 rounded-full bg-vip-purple/20 text-vip-purple-light border border-vip-purple/30 flex items-center gap-1">
+                        <Sparkles className="w-3 h-3" />
+                        <span>{language === 'ar' ? 'دائم مدى الحياة' : 'Lifetime'}</span>
+                      </span>
+
+                      <div
+                        className={cn(
+                          'w-6 h-6 rounded-full border flex items-center justify-center transition-colors',
+                          selectedDiscount === 20
+                            ? 'bg-vip-purple border-vip-purple text-white'
+                            : 'border-vip-border text-transparent'
+                        )}
+                      >
+                        <Check className="w-3.5 h-3.5 font-bold" />
+                      </div>
+                    </div>
+
+                    <div>
+                      <div className="flex items-baseline gap-2 mb-1">
+                        <span className="text-3xl font-black text-white">20%</span>
+                        <span className="text-base font-bold text-vip-purple-light">
+                          {language === 'ar' ? 'خصم دائم مدى الحياة' : 'Lifetime 20% Discount'}
+                        </span>
+                      </div>
+                      <p className="text-xs text-vip-text-secondary leading-relaxed">
+                        {language === 'ar'
+                          ? 'خصم 20% دائم ومستمر لجميع طلباتك المستقبلية على كافة الباقات بدون أي شروط.'
+                          : '20% discount on all your orders forever without limits.'}
+                      </p>
+                    </div>
+                  </div>
+                </div>
+              </Card>
+
+              {/* Package Selection Section with Strikethrough Real Price & Discount Price */}
               <div className="space-y-4">
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-3">
@@ -424,11 +577,13 @@ function TopupInner() {
                       <Gem className="w-5 h-5" />
                     </div>
                     <div>
-                      <h2 className="text-xl font-bold text-white">{t('selectPackage')}</h2>
+                      <h2 className="text-xl font-bold text-white">
+                        {language === 'ar' ? '3. اختر باقة الجواهر' : '3. Select Diamond Package'}
+                      </h2>
                       <p className="text-xs text-vip-text-secondary">
                         {language === 'ar'
-                          ? 'اختر عدد الجواهر المناسب لك لشحنها فوراً'
-                          : 'Select the desired diamonds top-up amount'}
+                          ? `الأسعار معروضة بعد تطبيق خصم ${selectedDiscount}% الذي اخترته`
+                          : `Prices calculated with your selected ${selectedDiscount}% discount`}
                       </p>
                     </div>
                   </div>
@@ -446,26 +601,36 @@ function TopupInner() {
                   <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-3 gap-4">
                     {packages.map((pkg) => {
                       const isSelected = selectedPackage?.id === pkg.id;
+                      const discountedPrice = calcDiscountedPrice(pkg.price);
+
                       return (
                         <div
                           key={pkg.id}
                           onClick={() => setSelectedPackage(pkg)}
                           className={cn(
-                            'relative cursor-pointer rounded-2xl p-5 border transition-all duration-300 flex flex-col justify-between overflow-hidden',
+                            'relative cursor-pointer rounded-2xl p-4 sm:p-5 border transition-all duration-300 flex flex-col justify-between overflow-hidden',
                             isSelected
                               ? 'bg-vip-card-hover border-vip-purple shadow-[0_0_25px_rgba(124,58,237,0.35)] scale-[1.02]'
                               : 'bg-vip-card border-vip-border hover:border-vip-border-light hover:bg-vip-card-hover'
                           )}
                         >
+                          {/* Discount Badge on Top of the Diamonds */}
+                          <div className="absolute top-2.5 end-2.5 z-10">
+                            <span className="inline-flex items-center gap-1 text-[11px] font-extrabold px-2 py-0.5 rounded-full bg-gradient-to-r from-vip-purple to-vip-blue text-white shadow-md border border-vip-purple/30">
+                              🔥 {language === 'ar' ? `خصم ${selectedDiscount}%` : `${selectedDiscount}% OFF`}
+                            </span>
+                          </div>
+
+                          {/* Selected Check Icon */}
                           {isSelected && (
-                            <div className="absolute top-2.5 right-2.5 w-6 h-6 rounded-full bg-vip-purple flex items-center justify-center text-white shadow-md">
-                              <Check className="w-3.5 h-3.5" />
+                            <div className="absolute top-2.5 start-2.5 w-6 h-6 rounded-full bg-vip-purple flex items-center justify-center text-white shadow-md z-10">
+                              <Check className="w-3.5 h-3.5 font-bold" />
                             </div>
                           )}
 
-                          <div>
-                            <div className="w-12 h-12 rounded-xl bg-vip-gold/10 border border-vip-gold/20 flex items-center justify-center text-vip-gold mb-4 group-hover:scale-110 transition-transform">
-                              <Gem className="w-7 h-7" />
+                          <div className="pt-5">
+                            <div className="w-11 h-11 rounded-xl bg-vip-gold/10 border border-vip-gold/20 flex items-center justify-center text-vip-gold mb-3">
+                              <Gem className="w-6 h-6" />
                             </div>
 
                             <div className="flex items-baseline gap-1">
@@ -476,11 +641,22 @@ function TopupInner() {
                             </div>
                           </div>
 
-                          <div className="mt-4 pt-3 border-t border-vip-border/60 flex items-center justify-between">
-                            <span className="text-xs text-vip-text-muted">{t('price')}</span>
-                            <span className="text-base font-bold text-white">
-                              {formatPrice(pkg.price)}
-                            </span>
+                          {/* Pricing Display: Strikethrough real price & bold discount price */}
+                          <div className="mt-4 pt-3 border-t border-vip-border/60">
+                            <div className="flex items-center justify-between text-xs text-vip-text-muted mb-1">
+                              <span className="text-[11px]">{language === 'ar' ? 'السعر الحقيقي:' : 'Original:'}</span>
+                              <span className="line-through text-vip-text-muted/80 font-mono text-xs sm:text-sm">
+                                {formatPrice(pkg.price)}
+                              </span>
+                            </div>
+                            <div className="flex items-baseline justify-between">
+                              <span className="text-[10px] sm:text-[11px] font-bold text-emerald-400">
+                                {language === 'ar' ? 'بعد الخصم:' : 'Discounted:'}
+                              </span>
+                              <span className="text-xl sm:text-2xl font-black text-vip-gold font-mono">
+                                {formatPrice(discountedPrice)}
+                              </span>
+                            </div>
                           </div>
                         </div>
                       );
@@ -506,7 +682,7 @@ function TopupInner() {
           )}
 
           {/* STEP 2: Review & Select Payment */}
-          {step === 2 && (
+          {step === 2 && selectedPackage && (
             <motion.div
               key="step-2"
               initial={{ opacity: 0, y: 15 }}
@@ -524,7 +700,7 @@ function TopupInner() {
                   <h2 className="text-xl font-bold text-white">{t('orderSummary')}</h2>
                 </div>
 
-                <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4 p-4 rounded-xl bg-vip-bg border border-vip-border">
+                <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4 p-4 rounded-xl bg-vip-bg border border-vip-border mb-4">
                   <div>
                     <span className="text-xs text-vip-text-muted block">{t('playerUid')}</span>
                     <span className="text-base font-mono font-bold text-white tracking-wider">{playerUid}</span>
@@ -532,37 +708,42 @@ function TopupInner() {
                   <div>
                     <span className="text-xs text-vip-text-muted block">{t('playerName')}</span>
                     <span className="text-base font-bold text-white">
-                      {playerName || (language === 'ar' ? 'غير مؤكد (سيتم التحقق مع الإيصال)' : 'Unverified')}
+                      {playerName || (language === 'ar' ? 'حساب مؤكد' : 'Verified')}
                     </span>
                   </div>
                   <div>
                     <span className="text-xs text-vip-text-muted block">{t('featuredPackages')}</span>
                     <span className="text-base font-bold text-vip-gold flex items-center gap-1">
                       <Gem className="w-4 h-4" />
-                      {selectedPackage?.diamonds.toLocaleString()} {t('diamonds')}
+                      {selectedPackage.diamonds.toLocaleString()} {t('diamonds')}
                     </span>
                   </div>
                 </div>
 
-                <div className="mt-4 p-4 rounded-xl bg-vip-purple/10 border border-vip-purple/20 flex items-center justify-between">
-                  <div className="flex items-center gap-2">
-                    <Flame className="w-5 h-5 text-vip-gold" />
-                    <span className="text-sm font-medium text-vip-text-primary">
-                      {language === 'ar'
-                        ? 'سيتم تطبيق خصم 50% للطلب الأول أو 20% للطلبات العادية تلقائياً عند الدفع!'
-                        : 'A 50% first-order discount or 20% regular discount will be applied automatically!'}
+                {/* Price Breakdown */}
+                <div className="p-4 rounded-xl bg-vip-purple/10 border border-vip-purple/20 grid grid-cols-1 sm:grid-cols-3 gap-4">
+                  <div>
+                    <span className="text-xs text-vip-text-muted block">{language === 'ar' ? 'السعر الحقيقي' : 'Original Price'}</span>
+                    <span className="text-base font-semibold line-through text-vip-text-muted font-mono">
+                      {formatPrice(selectedPackage.price)}
                     </span>
                   </div>
-                  <div className="text-right">
-                    <span className="text-xs text-vip-text-muted block">{t('originalPrice')}</span>
-                    <span className="text-lg font-bold text-white">
-                      {selectedPackage ? formatPrice(selectedPackage.price) : '0'}
+                  <div>
+                    <span className="text-xs text-vip-text-muted block">{language === 'ar' ? 'الخصم المطبق' : 'Applied Discount'}</span>
+                    <span className="text-base font-bold text-emerald-400">
+                      %{selectedDiscount} ({formatPrice(selectedPackage.price * (selectedDiscount / 100))}-)
+                    </span>
+                  </div>
+                  <div>
+                    <span className="text-xs text-vip-text-muted block">{language === 'ar' ? 'المبلغ النهائي للدفع' : 'Final Amount'}</span>
+                    <span className="text-2xl font-black text-vip-gold font-mono">
+                      {formatPrice(calcDiscountedPrice(selectedPackage.price))}
                     </span>
                   </div>
                 </div>
               </Card>
 
-              {/* Payment Method Selection */}
+              {/* Payment Method Selection: ONLY InstaPay and Vodafone Cash */}
               <div className="space-y-4">
                 <div className="flex items-center gap-3">
                   <div className="w-8 h-8 rounded-lg bg-vip-purple/20 flex items-center justify-center text-vip-purple">
@@ -576,7 +757,7 @@ function TopupInner() {
                   </div>
                 </div>
 
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   {/* InstaPay */}
                   <div
                     onClick={() => setPaymentMethod('instapay')}
@@ -612,39 +793,6 @@ function TopupInner() {
                     </div>
                   </div>
 
-                  {/* DaQan Cash / Dakahlia Cash */}
-                  <div
-                    onClick={() => setPaymentMethod('daqan_cash')}
-                    className={cn(
-                      'p-5 rounded-2xl border cursor-pointer transition-all duration-300 relative overflow-hidden flex flex-col justify-between',
-                      paymentMethod === 'daqan_cash'
-                        ? 'bg-vip-card-hover border-vip-purple shadow-[0_0_25px_rgba(124,58,237,0.35)] scale-[1.01]'
-                        : 'bg-vip-card border-vip-border hover:border-vip-border-light hover:bg-vip-card-hover'
-                    )}
-                  >
-                    <div className="flex items-start justify-between mb-4">
-                      <div className="w-12 h-12 rounded-xl bg-amber-500/10 border border-amber-500/30 flex items-center justify-center text-amber-400">
-                        <CreditCard className="w-6 h-6" />
-                      </div>
-                      <div
-                        className={cn(
-                          'w-6 h-6 rounded-full border flex items-center justify-center transition-colors',
-                          paymentMethod === 'daqan_cash'
-                            ? 'bg-vip-purple border-vip-purple text-white'
-                            : 'border-vip-border text-transparent'
-                        )}
-                      >
-                        <Check className="w-3.5 h-3.5" />
-                      </div>
-                    </div>
-                    <div>
-                      <h3 className="text-base font-bold text-white mb-1">{t('daqanCash')}</h3>
-                      <p className="text-xs text-vip-text-secondary leading-relaxed">
-                        {t('daqanCashDesc')}
-                      </p>
-                    </div>
-                  </div>
-
                   {/* Vodafone Cash */}
                   <div
                     onClick={() => setPaymentMethod('vodafone_cash')}
@@ -674,7 +822,7 @@ function TopupInner() {
                       <h3 className="text-base font-bold text-white mb-1">{t('vodafoneCash')}</h3>
                       <p className="text-xs text-vip-text-secondary leading-relaxed">
                         {language === 'ar'
-                          ? 'تحويل فوري عبر محفظة فودافون كاش أو المحافظ الأخرى'
+                          ? 'تحويل فوري عبر محفظة فودافون كاش أو أي محفظة إلكترونية أخرى'
                           : 'Fast transfer through Vodafone Cash or mobile wallets'}
                       </p>
                     </div>
@@ -740,7 +888,7 @@ function TopupInner() {
                 {/* Price Breakdown */}
                 <div className="mt-6 pt-6 border-t border-vip-border/60 grid grid-cols-2 sm:grid-cols-4 gap-4">
                   <div>
-                    <span className="text-xs text-vip-text-muted block">{t('originalPrice')}</span>
+                    <span className="text-xs text-vip-text-muted block">{language === 'ar' ? 'السعر الحقيقي' : 'Original Price'}</span>
                     <span className="text-sm font-semibold line-through text-vip-text-secondary">
                       {formatPrice(orderResult.originalPrice)}
                     </span>
@@ -760,13 +908,13 @@ function TopupInner() {
                   <div>
                     <span className="text-xs text-vip-text-muted block">{language === 'ar' ? 'نوع العرض' : 'Offer Type'}</span>
                     <span className="inline-block mt-0.5 px-2.5 py-0.5 rounded text-xs font-bold bg-vip-gold/20 text-vip-gold border border-vip-gold/30">
-                      {orderResult.isFirstOrder
+                      {orderResult.discountPercent >= 50
                         ? language === 'ar'
                           ? '🎉 طلب أول (خصم 50%)'
                           : '🎉 1st Order (50% OFF)'
                         : language === 'ar'
-                        ? 'خصم دائم (20%)'
-                        : 'Regular (20% OFF)'}
+                        ? 'خصم دائم مدى الحياة (20%)'
+                        : 'Lifetime (20% OFF)'}
                     </span>
                   </div>
                 </div>
@@ -785,13 +933,9 @@ function TopupInner() {
                         ? language === 'ar'
                           ? 'حوّل المبلغ المطلوب عبر إنستاباي إلى البيانات التالية'
                           : 'Transfer the required amount via InstaPay to the following details'
-                        : paymentMethod === 'daqan_cash'
-                        ? language === 'ar'
-                          ? 'حوّل المبلغ المطلوب عبر خدمة دكان كاش / دقهلية كاش إلى الرقم التالي'
-                          : 'Transfer the required amount via DaQan Cash / Dakahlia Cash to the following number'
                         : language === 'ar'
-                        ? 'حوّل المبلغ المطلوب عبر فودافون كاش أو محفظتك إلى الرقم التالي'
-                        : 'Transfer the required amount via Vodafone Cash or wallet to the following number'}
+                        ? 'حوّل المبلغ المطلوب عبر محفظة فودافون كاش أو أي محفظة ذكية إلى الرقم التالي'
+                        : 'Transfer the required amount via Vodafone Cash or mobile wallet to the following number'}
                     </p>
                   </div>
                 </div>
@@ -849,18 +993,18 @@ function TopupInner() {
                     </p>
                     <p>
                       {language === 'ar'
-                        ? 'يرجى تحويل المبلغ بالكامل بدقة واحتفظ بصورة أو لقطة شاشة لإشعار التحويل ثم قم برفعها في الحقل أدناه لتأكيد طلبك فورا.'
-                        : 'Please transfer the exact amount and save a screenshot of the transfer confirmation, then upload it below to verify your order immediately.'}
+                        ? 'بعد إتمام التحويل، يرجى التقاط لقطة شاشة للإيصال ورفعها بالأسفل للتحقق الفوري وشحن الجواهر إلى حسابك.'
+                        : 'After transfer, take a screenshot of your receipt and upload it below for immediate verification.'}
                     </p>
                   </div>
                 </div>
               </Card>
 
-              {/* Receipt Upload Section */}
+              {/* Receipt Upload Card */}
               <Card className="p-6 md:p-8 neon-border">
                 <div className="flex items-center gap-3 mb-6">
-                  <div className="w-8 h-8 rounded-lg bg-vip-cyan/20 flex items-center justify-center text-vip-cyan">
-                    <ShieldCheck className="w-5 h-5" />
+                  <div className="w-8 h-8 rounded-lg bg-emerald-500/20 flex items-center justify-center text-emerald-400">
+                    <CheckCircle2 className="w-5 h-5" />
                   </div>
                   <div>
                     <h2 className="text-xl font-bold text-white">{t('uploadReceipt')}</h2>
@@ -869,28 +1013,34 @@ function TopupInner() {
                 </div>
 
                 {receiptUploaded ? (
-                  <div className="p-6 rounded-2xl bg-vip-success/10 border border-vip-success/40 text-center space-y-4">
-                    <div className="w-16 h-16 rounded-full bg-vip-success/20 border border-vip-success/40 flex items-center justify-center text-vip-success mx-auto">
+                  <motion.div
+                    initial={{ opacity: 0, scale: 0.95 }}
+                    animate={{ opacity: 1, scale: 1 }}
+                    className="p-6 rounded-2xl bg-emerald-500/10 border border-emerald-500/30 text-center space-y-4"
+                  >
+                    <div className="w-14 h-14 rounded-full bg-emerald-500/20 text-emerald-400 flex items-center justify-center mx-auto">
                       <Check className="w-8 h-8" />
                     </div>
                     <div>
-                      <h3 className="text-xl font-bold text-white">{language === 'ar' ? 'تم استلام الإيصال بنجاح!' : 'Receipt Received!'}</h3>
+                      <h3 className="text-lg font-bold text-white">{t('receiptUploaded')}</h3>
                       <p className="text-sm text-vip-text-secondary mt-1">
-                        {t('receiptUploaded')}
+                        {language === 'ar'
+                          ? 'طلبك الآن قيد المراجعة لدى فريق VIP STORE. سيتم إرسال الجواهر خلال دقائق معدودة!'
+                          : 'Your order is now under review. Diamonds will be sent in a few minutes!'}
                       </p>
                     </div>
-                    <div className="pt-2">
+
+                    <div className="pt-2 flex justify-center">
                       <Button
                         variant="primary"
-                        size="lg"
-                        onClick={() => router.push(`/track?orderNumber=${orderResult.orderNumber}`)}
-                        className="px-8 shadow-[0_0_20px_rgba(124,58,237,0.4)]"
+                        onClick={() => router.push(`/track?orderNumber=${encodeURIComponent(orderResult.orderNumber)}`)}
+                        className="flex items-center gap-2"
                       >
-                        <ExternalLink className="w-5 h-5 ml-2" />
                         <span>{t('trackOrder')}</span>
+                        {dir === 'rtl' ? <ArrowLeft className="w-4 h-4" /> : <ArrowRight className="w-4 h-4" />}
                       </Button>
                     </div>
-                  </div>
+                  </motion.div>
                 ) : (
                   <div className="space-y-6">
                     <FileUpload
@@ -900,43 +1050,34 @@ function TopupInner() {
                     />
 
                     <div className="flex flex-col sm:flex-row items-center justify-between gap-4 pt-2">
-                      <p className="text-xs text-vip-text-muted">
-                        {language === 'ar' ? 'الحد الأقصى لحجم الملف: 5 ميجابايت (PNG, JPG, JPEG)' : 'Max file size: 5MB (PNG, JPG, JPEG)'}
-                      </p>
+                      <Button
+                        variant="secondary"
+                        onClick={() => router.push(`/track?orderNumber=${encodeURIComponent(orderResult.orderNumber)}`)}
+                        className="w-full sm:w-auto"
+                      >
+                        <span>{language === 'ar' ? 'متابعة الطلب لاحقاً' : 'Track Order Later'}</span>
+                      </Button>
 
                       <Button
-                        size="lg"
                         variant="primary"
                         onClick={handleUploadReceipt}
                         loading={uploadingReceipt}
                         disabled={!receiptFile || uploadingReceipt}
-                        className="w-full sm:w-auto px-8 font-bold shadow-[0_0_20px_rgba(124,58,237,0.4)]"
+                        className="w-full sm:w-auto px-8 flex items-center justify-center gap-2 font-bold shadow-[0_0_20px_rgba(124,58,237,0.4)]"
                       >
-                        <span>{language === 'ar' ? 'تأكيد ورفع الإيصال' : 'Submit Receipt'}</span>
+                        <Check className="w-4 h-4" />
+                        <span>{t('proceedToUpload')}</span>
                       </Button>
                     </div>
                   </div>
                 )}
               </Card>
-
-              {/* Bottom Track Order Direct Link */}
-              <div className="text-center pt-2">
-                <Button
-                  variant="ghost"
-                  onClick={() => router.push(`/track?orderNumber=${orderResult.orderNumber}`)}
-                  className="text-vip-text-secondary hover:text-white"
-                >
-                  <ExternalLink className="w-4 h-4 ml-1.5" />
-                  <span>{language === 'ar' ? 'الانتقال إلى صفحة تتبع الطلب' : 'Go to Order Tracking Page'}</span>
-                </Button>
-              </div>
             </motion.div>
           )}
         </AnimatePresence>
       </main>
 
       <Footer />
-      <Toast toasts={toasts} onRemove={removeToast} />
     </div>
   );
 }
@@ -946,7 +1087,7 @@ export default function TopupPage() {
     <Suspense
       fallback={
         <div className="min-h-screen bg-vip-bg flex items-center justify-center">
-          <LoadingSpinner size="lg" text="جاري التحميل..." />
+          <LoadingSpinner size="lg" text="تحميل المتجر..." />
         </div>
       }
     >

@@ -137,68 +137,48 @@ export const PaymentDiscountsSection: React.FC = () => {
                   : 'Fast and convenient Egyptian payment methods with transaction verification before diamonds delivery.'}
               </p>
 
-              {/* Payment Methods Badges */}
-              <div className="space-y-3.5 mb-6">
-                {/* InstaPay */}
-                <div className="p-3.5 rounded-xl bg-vip-bg/80 border border-purple-500/30 flex items-center justify-between">
-                  <div className="flex items-center gap-3">
-                    <div className="w-9 h-9 rounded-lg bg-purple-500/15 text-purple-400 flex items-center justify-center font-bold text-xs">
-                      ⚡
+                {/* Payment Methods Badges */}
+                <div className="space-y-3.5 mb-6">
+                  {/* InstaPay */}
+                  <div className="p-4 rounded-xl bg-vip-bg/80 border border-purple-500/30 flex items-center justify-between">
+                    <div className="flex items-center gap-3.5">
+                      <div className="w-10 h-10 rounded-xl bg-purple-500/15 text-purple-400 flex items-center justify-center font-bold text-base">
+                        ⚡
+                      </div>
+                      <div>
+                        <h4 className="text-base font-bold text-white">
+                          {isArabic ? 'إنستاباي (InstaPay)' : 'InstaPay'}
+                        </h4>
+                        <p className="text-xs text-vip-text-muted mt-0.5">
+                          {isArabic ? 'تحويل فوري لحظي من جميع البنوك والمحافظ' : 'Instant bank transfer'}
+                        </p>
+                      </div>
                     </div>
-                    <div>
-                      <h4 className="text-sm font-bold text-white">
-                        {isArabic ? 'إنستاباي (InstaPay)' : 'InstaPay'}
-                      </h4>
-                      <p className="text-[11px] text-vip-text-muted">
-                        {isArabic ? 'تحويل لحظي من جميع البنوك والمحافظ' : 'Instant bank transfer'}
-                      </p>
-                    </div>
+                    <span className="text-xs px-3 py-1 rounded-full bg-purple-500/15 text-purple-300 font-semibold border border-purple-500/30">
+                      {isArabic ? 'فوري' : 'Instant'}
+                    </span>
                   </div>
-                  <span className="text-xs px-2.5 py-1 rounded-full bg-purple-500/15 text-purple-300 font-semibold border border-purple-500/30">
-                    {isArabic ? 'فوري' : 'Instant'}
-                  </span>
-                </div>
 
-                {/* DaQan Cash / Dakahlia Cash */}
-                <div className="p-3.5 rounded-xl bg-vip-bg/80 border border-amber-500/30 flex items-center justify-between">
-                  <div className="flex items-center gap-3">
-                    <div className="w-9 h-9 rounded-xl bg-amber-500/15 text-amber-400 flex items-center justify-center font-bold text-xs">
-                      💳
+                  {/* Vodafone Cash */}
+                  <div className="p-4 rounded-xl bg-vip-bg/80 border border-red-500/30 flex items-center justify-between">
+                    <div className="flex items-center gap-3.5">
+                      <div className="w-10 h-10 rounded-xl bg-red-500/15 text-red-400 flex items-center justify-center font-bold text-base">
+                        📱
+                      </div>
+                      <div>
+                        <h4 className="text-base font-bold text-white">
+                          {isArabic ? 'فودافون كاش والمحافظ الإلكترونية' : 'Vodafone Cash & Mobile Wallets'}
+                        </h4>
+                        <p className="text-xs text-vip-text-muted mt-0.5">
+                          {isArabic ? 'تحويل مباشر وسريع عبر كافة المحافظ الذكية' : 'Direct mobile wallet transfer'}
+                        </p>
+                      </div>
                     </div>
-                    <div>
-                      <h4 className="text-sm font-bold text-white">
-                        {isArabic ? 'دكان كاش / دقهلية كاش (DaQan Cash)' : 'DaQan Cash / Dakahlia Cash'}
-                      </h4>
-                      <p className="text-[11px] text-vip-text-muted">
-                        {isArabic ? 'تحويل رسمي وموثوق عبر خدمة دكان كاش' : 'Official DaQan wallet transfer'}
-                      </p>
-                    </div>
+                    <span className="text-xs px-3 py-1 rounded-full bg-red-500/15 text-red-300 font-semibold border border-red-500/30">
+                      010
+                    </span>
                   </div>
-                  <span className="text-xs px-2.5 py-1 rounded-full bg-amber-500/15 text-amber-300 font-semibold border border-amber-500/30">
-                    {isArabic ? 'معتمد' : 'Verified'}
-                  </span>
                 </div>
-
-                {/* Mobile Cash */}
-                <div className="p-3.5 rounded-xl bg-vip-bg/80 border border-red-500/30 flex items-center justify-between">
-                  <div className="flex items-center gap-3">
-                    <div className="w-9 h-9 rounded-xl bg-red-500/15 text-red-400 flex items-center justify-center font-bold text-xs">
-                      📱
-                    </div>
-                    <div>
-                      <h4 className="text-sm font-bold text-white">
-                        {isArabic ? 'فودافون كاش ومحافظ الهاتف' : 'Vodafone Cash & Mobile Wallets'}
-                      </h4>
-                      <p className="text-[11px] text-vip-text-muted">
-                        {isArabic ? 'تحويل مباشر وسريع عبر المحافظ الذكية' : 'Direct mobile wallet transfer'}
-                      </p>
-                    </div>
-                  </div>
-                  <span className="text-xs px-2.5 py-1 rounded-full bg-red-500/15 text-red-300 font-semibold border border-red-500/30">
-                    010
-                  </span>
-                </div>
-              </div>
 
               {/* Official Transfer Phone Callout */}
               <div className="p-4 rounded-xl bg-gradient-to-r from-vip-purple/20 to-vip-blue/20 border border-vip-purple/40 flex items-center justify-between">
