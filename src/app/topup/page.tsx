@@ -20,6 +20,8 @@ import {
   Flame,
   Lock,
   Percent,
+  Crown,
+  Gift,
 } from 'lucide-react';
 
 import Navbar from '@/components/layout/Navbar';
@@ -58,6 +60,9 @@ function TopupInner() {
   // Discount Selection: customer chooses 50% or 20%
   const [selectedDiscount, setSelectedDiscount] = useState<50 | 20>(50);
   const [hasUsed50Discount, setHasUsed50Discount] = useState<boolean>(false);
+
+  // Category filter state
+  const [selectedCategory, setSelectedCategory] = useState<'ALL' | 'DIAMONDS' | 'MEMBERSHIP' | 'AIRDROP'>('ALL');
 
   // Packages state
   const [packages, setPackages] = useState<DiamondPackage[]>([]);
@@ -595,6 +600,61 @@ function TopupInner() {
                   </div>
                 </div>
 
+                {/* Category Filter Tabs */}
+                <div className="flex flex-wrap items-center gap-2 pt-2">
+                  <button
+                    type="button"
+                    onClick={() => setSelectedCategory('ALL')}
+                    className={cn(
+                      'px-3.5 py-1.5 rounded-full text-xs font-bold transition-all select-none',
+                      selectedCategory === 'ALL'
+                        ? 'bg-vip-purple text-white shadow-md shadow-vip-purple/30'
+                        : 'bg-vip-card text-vip-text-secondary hover:text-white hover:bg-vip-card-hover border border-vip-border'
+                    )}
+                  >
+                    {language === 'ar' ? 'الكل' : 'All'}
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setSelectedCategory('DIAMONDS')}
+                    className={cn(
+                      'inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-full text-xs font-bold transition-all select-none',
+                      selectedCategory === 'DIAMONDS'
+                        ? 'bg-vip-gold text-black shadow-md shadow-vip-gold/30 font-extrabold'
+                        : 'bg-vip-card text-vip-text-secondary hover:text-white hover:bg-vip-card-hover border border-vip-border'
+                    )}
+                  >
+                    <Gem className="w-3.5 h-3.5" />
+                    <span>{language === 'ar' ? 'جواهر فري فاير' : 'Diamonds'}</span>
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setSelectedCategory('MEMBERSHIP')}
+                    className={cn(
+                      'inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-full text-xs font-bold transition-all select-none',
+                      selectedCategory === 'MEMBERSHIP'
+                        ? 'bg-gradient-to-r from-amber-500 to-amber-600 text-black shadow-md shadow-amber-500/30 font-extrabold'
+                        : 'bg-vip-card text-vip-text-secondary hover:text-white hover:bg-vip-card-hover border border-vip-border'
+                    )}
+                  >
+                    <Crown className="w-3.5 h-3.5" />
+                    <span>{language === 'ar' ? 'عضويات VIP' : 'Memberships'}</span>
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setSelectedCategory('AIRDROP')}
+                    className={cn(
+                      'inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-full text-xs font-bold transition-all select-none',
+                      selectedCategory === 'AIRDROP'
+                        ? 'bg-gradient-to-r from-rose-500 to-orange-500 text-white shadow-md shadow-rose-500/30 font-extrabold'
+                        : 'bg-vip-card text-vip-text-secondary hover:text-white hover:bg-vip-card-hover border border-vip-border'
+                    )}
+                  >
+                    <Flame className="w-3.5 h-3.5 text-orange-400" />
+                    <span>{language === 'ar' ? 'دروبات خاصة' : 'Airdrops'}</span>
+                  </button>
+                </div>
+
                 {loadingPackages ? (
                   <div className="py-20 flex justify-center">
                     <LoadingSpinner size="lg" text={t('loading')} />
@@ -605,68 +665,120 @@ function TopupInner() {
                   </div>
                 ) : (
                   <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-3 gap-4">
-                    {packages.map((pkg) => {
-                      const isSelected = selectedPackage?.id === pkg.id;
-                      const discountedPrice = calcDiscountedPrice(pkg.price);
+                    {packages
+                      .filter((p) => selectedCategory === 'ALL' || (p.category || 'DIAMONDS') === selectedCategory)
+                      .map((pkg) => {
+                        const isSelected = selectedPackage?.id === pkg.id;
+                        const discountedPrice = calcDiscountedPrice(pkg.price);
+                        const isMembership = pkg.category === 'MEMBERSHIP';
+                        const isAirdrop = pkg.category === 'AIRDROP';
 
-                      return (
-                        <div
-                          key={pkg.id}
-                          onClick={() => setSelectedPackage(pkg)}
-                          className={cn(
-                            'relative cursor-pointer rounded-2xl p-4 sm:p-5 border transition-all duration-300 flex flex-col justify-between overflow-hidden',
-                            isSelected
-                              ? 'bg-vip-card-hover border-vip-purple shadow-[0_0_25px_rgba(124,58,237,0.35)] scale-[1.02]'
-                              : 'bg-vip-card border-vip-border hover:border-vip-border-light hover:bg-vip-card-hover'
-                          )}
-                        >
-                          {/* Discount Badge on Top of the Diamonds */}
-                          <div className="absolute top-2.5 end-2.5 z-10">
-                            <span className="inline-flex items-center gap-1 text-[11px] font-extrabold px-2 py-0.5 rounded-full bg-gradient-to-r from-vip-purple to-vip-blue text-white shadow-md border border-vip-purple/30">
-                              🔥 {language === 'ar' ? `خصم ${selectedDiscount}%` : `${selectedDiscount}% OFF`}
-                            </span>
+                        return (
+                          <div
+                            key={pkg.id}
+                            onClick={() => setSelectedPackage(pkg)}
+                            className={cn(
+                              'relative cursor-pointer rounded-2xl p-4 sm:p-5 border transition-all duration-300 flex flex-col justify-between overflow-hidden',
+                              isSelected
+                                ? 'bg-vip-card-hover border-vip-purple shadow-[0_0_25px_rgba(124,58,237,0.35)] scale-[1.02]'
+                                : isMembership
+                                ? 'bg-vip-card border-amber-500/30 hover:border-amber-400/60 hover:bg-vip-card-hover'
+                                : isAirdrop
+                                ? 'bg-vip-card border-rose-500/30 hover:border-rose-400/60 hover:bg-vip-card-hover'
+                                : 'bg-vip-card border-vip-border hover:border-vip-border-light hover:bg-vip-card-hover'
+                            )}
+                          >
+                            {/* Top Badges: Custom Type Badge & Discount Badge */}
+                            <div className="absolute top-2.5 end-2.5 z-10 flex flex-col items-end gap-1">
+                              <span className="inline-flex items-center gap-1 text-[10px] sm:text-[11px] font-extrabold px-2 py-0.5 rounded-full bg-gradient-to-r from-vip-purple to-vip-blue text-white shadow-md border border-vip-purple/30">
+                                🔥 {language === 'ar' ? `خصم ${selectedDiscount}%` : `${selectedDiscount}% OFF`}
+                              </span>
+                              {pkg.badge && (
+                                <span className={cn(
+                                  'text-[9px] font-bold px-1.5 py-0.2 rounded-full border',
+                                  isMembership
+                                    ? 'bg-amber-500/20 text-amber-300 border-amber-400/40'
+                                    : isAirdrop
+                                    ? 'bg-rose-500/20 text-rose-300 border-rose-400/40'
+                                    : 'bg-vip-purple/20 text-vip-purple-light border-vip-purple/40'
+                                )}>
+                                  {pkg.badge}
+                                </span>
+                              )}
+                            </div>
+
+                            {/* Selected Check Icon */}
+                            {isSelected && (
+                              <div className="absolute top-2.5 start-2.5 w-6 h-6 rounded-full bg-vip-purple flex items-center justify-center text-white shadow-md z-10">
+                                <Check className="w-3.5 h-3.5 font-bold" />
+                              </div>
+                            )}
+
+                            <div className="pt-6">
+                              {/* Icon Box */}
+                              <div
+                                className={cn(
+                                  'w-11 h-11 rounded-xl flex items-center justify-center mb-3',
+                                  isMembership
+                                    ? 'bg-amber-500/15 border border-amber-500/30 text-amber-400 shadow-[0_0_15px_rgba(245,158,11,0.2)]'
+                                    : isAirdrop
+                                    ? 'bg-rose-500/15 border border-rose-500/30 text-rose-400 shadow-[0_0_15px_rgba(244,63,94,0.2)]'
+                                    : 'bg-vip-gold/10 border border-vip-gold/20 text-vip-gold shadow-[0_0_15px_rgba(234,179,8,0.15)]'
+                                )}
+                              >
+                                {isMembership ? (
+                                  <Crown className="w-6 h-6" />
+                                ) : isAirdrop ? (
+                                  <Flame className="w-6 h-6" />
+                                ) : (
+                                  <Gem className="w-6 h-6" />
+                                )}
+                              </div>
+
+                              {/* Title & Description */}
+                              {pkg.name ? (
+                                <div>
+                                  <h3 className="text-base sm:text-lg font-black text-white leading-tight">
+                                    {pkg.name}
+                                  </h3>
+                                  <span className="text-[11px] text-vip-text-secondary block mt-0.5">
+                                    {isMembership
+                                      ? `${pkg.diamonds} جوهرة + هدايا يومية`
+                                      : isAirdrop
+                                      ? `${pkg.diamonds} جوهرة + سكنات`
+                                      : `${pkg.diamonds} ${t('diamonds')}`}
+                                  </span>
+                                </div>
+                              ) : (
+                                <div className="flex items-baseline gap-1">
+                                  <span className="text-2xl sm:text-3xl font-extrabold text-vip-gold font-mono">
+                                    {pkg.diamonds.toLocaleString()}
+                                  </span>
+                                  <span className="text-xs text-vip-text-secondary">{t('diamonds')}</span>
+                                </div>
+                              )}
+                            </div>
+
+                            {/* Pricing Display: Strikethrough real price & bold discount price */}
+                            <div className="mt-4 pt-3 border-t border-vip-border/60">
+                              <div className="flex items-center justify-between text-xs text-vip-text-muted mb-1">
+                                <span className="text-[11px]">{language === 'ar' ? 'السعر الحقيقي:' : 'Original:'}</span>
+                                <span className="line-through text-vip-text-muted/80 font-mono text-xs sm:text-sm">
+                                  {formatPrice(pkg.price)}
+                                </span>
+                              </div>
+                              <div className="flex items-baseline justify-between">
+                                <span className="text-[10px] sm:text-[11px] font-bold text-emerald-400">
+                                  {language === 'ar' ? 'بعد الخصم:' : 'Discounted:'}
+                                </span>
+                                <span className="text-xl sm:text-2xl font-black text-vip-gold font-mono">
+                                  {formatPrice(discountedPrice)}
+                                </span>
+                              </div>
+                            </div>
                           </div>
-
-                          {/* Selected Check Icon */}
-                          {isSelected && (
-                            <div className="absolute top-2.5 start-2.5 w-6 h-6 rounded-full bg-vip-purple flex items-center justify-center text-white shadow-md z-10">
-                              <Check className="w-3.5 h-3.5 font-bold" />
-                            </div>
-                          )}
-
-                          <div className="pt-5">
-                            <div className="w-11 h-11 rounded-xl bg-vip-gold/10 border border-vip-gold/20 flex items-center justify-center text-vip-gold mb-3">
-                              <Gem className="w-6 h-6" />
-                            </div>
-
-                            <div className="flex items-baseline gap-1">
-                              <span className="text-2xl sm:text-3xl font-extrabold text-vip-gold font-mono">
-                                {pkg.diamonds.toLocaleString()}
-                              </span>
-                              <span className="text-xs text-vip-text-secondary">{t('diamonds')}</span>
-                            </div>
-                          </div>
-
-                          {/* Pricing Display: Strikethrough real price & bold discount price */}
-                          <div className="mt-4 pt-3 border-t border-vip-border/60">
-                            <div className="flex items-center justify-between text-xs text-vip-text-muted mb-1">
-                              <span className="text-[11px]">{language === 'ar' ? 'السعر الحقيقي:' : 'Original:'}</span>
-                              <span className="line-through text-vip-text-muted/80 font-mono text-xs sm:text-sm">
-                                {formatPrice(pkg.price)}
-                              </span>
-                            </div>
-                            <div className="flex items-baseline justify-between">
-                              <span className="text-[10px] sm:text-[11px] font-bold text-emerald-400">
-                                {language === 'ar' ? 'بعد الخصم:' : 'Discounted:'}
-                              </span>
-                              <span className="text-xl sm:text-2xl font-black text-vip-gold font-mono">
-                                {formatPrice(discountedPrice)}
-                              </span>
-                            </div>
-                          </div>
-                        </div>
-                      );
-                    })}
+                        );
+                      })}
                   </div>
                 )}
               </div>

@@ -12,6 +12,9 @@ export type Language = 'ar' | 'en';
 
 export interface DiamondPackage {
   id: string;
+  name?: string | null;
+  category?: 'DIAMONDS' | 'MEMBERSHIP' | 'AIRDROP' | string | null;
+  badge?: string | null;
   diamonds: number;
   price: number;
   currency: string;
@@ -54,6 +57,8 @@ export interface OrderTrackingResult {
   playerUid: string;
   playerName: string | null;
   diamonds: number;
+  packageName?: string | null;
+  packageCategory?: string | null;
   originalPrice: number;
   discountAmount: number;
   finalPrice: number;

@@ -2,14 +2,14 @@
 
 import React, { useEffect, useState } from 'react';
 import Link from 'next/link';
-import { Gem, ArrowRight, ArrowLeft, Zap, Sparkles } from 'lucide-react';
+import { Gem, ArrowRight, ArrowLeft, Zap, Sparkles, Crown, Flame } from 'lucide-react';
 import { useLanguageContext } from '@/contexts/LanguageContext';
 import { Card } from '@/components/ui/Card';
 import { LoadingSpinner } from '@/components/ui/LoadingSpinner';
-import { formatPrice, formatPriceEn } from '@/lib/utils';
+import { formatPrice, formatPriceEn, cn } from '@/lib/utils';
 import type { DiamondPackage } from '@/types';
 
-// Default fallback packages to ensure instant aesthetic render even if DB is seeding
+// Default fallback packages to ensure instant aesthetic render
 const FALLBACK_PACKAGES: DiamondPackage[] = [
   { id: 'pkg-1', diamonds: 100, price: 50, currency: 'EGP', isActive: true, sortOrder: 1 },
   { id: 'pkg-2', diamonds: 310, price: 150, currency: 'EGP', isActive: true, sortOrder: 2 },
@@ -17,6 +17,10 @@ const FALLBACK_PACKAGES: DiamondPackage[] = [
   { id: 'pkg-4', diamonds: 1060, price: 500, currency: 'EGP', isActive: true, sortOrder: 4 },
   { id: 'pkg-5', diamonds: 2180, price: 1000, currency: 'EGP', isActive: true, sortOrder: 5 },
   { id: 'pkg-6', diamonds: 5600, price: 2500, currency: 'EGP', isActive: true, sortOrder: 6 },
+  { id: 'pkg-7', name: 'عضوية أسبوعية', category: 'MEMBERSHIP', badge: 'أسبوعية VIP', diamonds: 450, price: 80, currency: 'EGP', isActive: true, sortOrder: 7 },
+  { id: 'pkg-8', name: 'عضوية شهرية', category: 'MEMBERSHIP', badge: 'شهرية VIP', diamonds: 2600, price: 350, currency: 'EGP', isActive: true, sortOrder: 8 },
+  { id: 'pkg-9', name: 'دروب 1 دولار', category: 'AIRDROP', badge: 'دروب 1$', diamonds: 100, price: 50, currency: 'EGP', isActive: true, sortOrder: 9 },
+  { id: 'pkg-10', name: 'دروب 2 دولار', category: 'AIRDROP', badge: 'دروب 2$', diamonds: 300, price: 90, currency: 'EGP', isActive: true, sortOrder: 10 },
 ];
 
 export const PackagesPreview: React.FC = () => {
@@ -105,18 +109,44 @@ export const PackagesPreview: React.FC = () => {
                   </div>
 
                   <div>
-                    {/* Diamonds Icon & Count */}
-                    <div className="flex items-center gap-2 mb-3">
-                      <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-xl bg-amber-500/10 border border-amber-500/20 flex items-center justify-center shrink-0 group-hover:scale-110 transition-transform">
-                        <Gem className="w-6 h-6 sm:w-7 sm:h-7 text-amber-400 drop-shadow-[0_0_8px_rgba(245,158,11,0.5)]" />
+                    {/* Item Icon & Title/Diamonds */}
+                    <div className="flex items-center gap-2.5 mb-3">
+                      <div className={cn(
+                        'w-10 h-10 sm:w-12 sm:h-12 rounded-xl flex items-center justify-center shrink-0 group-hover:scale-110 transition-transform',
+                        pkg.category === 'MEMBERSHIP'
+                          ? 'bg-amber-500/15 border border-amber-500/30 text-amber-400'
+                          : pkg.category === 'AIRDROP'
+                          ? 'bg-rose-500/15 border border-rose-500/30 text-rose-400'
+                          : 'bg-amber-500/10 border border-amber-500/20 text-amber-400'
+                      )}>
+                        {pkg.category === 'MEMBERSHIP' ? (
+                          <Crown className="w-6 h-6 text-amber-400" />
+                        ) : pkg.category === 'AIRDROP' ? (
+                          <Flame className="w-6 h-6 text-rose-400" />
+                        ) : (
+                          <Gem className="w-6 h-6 sm:w-7 sm:h-7 text-amber-400 drop-shadow-[0_0_8px_rgba(245,158,11,0.5)]" />
+                        )}
                       </div>
                       <div>
-                        <span className="block text-2xl sm:text-3xl font-black text-gradient-gold">
-                          {pkg.diamonds.toLocaleString()}
-                        </span>
-                        <span className="text-xs text-vip-text-muted font-medium">
-                          {t('diamonds')}
-                        </span>
+                        {pkg.name ? (
+                          <>
+                            <span className="block text-base sm:text-lg font-black text-white leading-tight">
+                              {pkg.name}
+                            </span>
+                            <span className="text-[11px] text-vip-text-muted font-medium">
+                              {pkg.category === 'MEMBERSHIP' ? `${pkg.diamonds} جوهرة VIP` : `${pkg.diamonds} جوهرة`}
+                            </span>
+                          </>
+                        ) : (
+                          <>
+                            <span className="block text-2xl sm:text-3xl font-black text-gradient-gold">
+                              {pkg.diamonds.toLocaleString()}
+                            </span>
+                            <span className="text-xs text-vip-text-muted font-medium">
+                              {t('diamonds')}
+                            </span>
+                          </>
+                        )}
                       </div>
                     </div>
 

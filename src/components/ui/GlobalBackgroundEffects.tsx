@@ -2,7 +2,7 @@
 
 import React from 'react';
 
-// 24 deterministic floating diamond sparkles & golden embers
+// 18 deterministic floating diamond sparkles & golden gems
 const FLOATING_GEMS = [
   { id: 1, top: '5%', left: '8%', size: 7, duration: 7, delay: 0, color: '#fbbf24' },
   { id: 2, top: '18%', left: '88%', size: 9, duration: 8.5, delay: 1.2, color: '#a855f7' },
@@ -24,6 +24,36 @@ const FLOATING_GEMS = [
   { id: 18, top: '95%', left: '85%', size: 7, duration: 11.2, delay: 2.0, color: '#a855f7' },
 ];
 
+// 26 rising fiery ember particles (particles fire) with combustion glow
+const FIRE_PARTICLES = [
+  { id: 101, left: '6%', size: 4, duration: 6.2, delay: 0.2, color: '#ff4500' },
+  { id: 102, left: '12%', size: 6, duration: 7.5, delay: 1.8, color: '#ff7700' },
+  { id: 103, left: '19%', size: 3.5, duration: 5.8, delay: 3.1, color: '#ffaa00' },
+  { id: 104, left: '24%', size: 5, duration: 8.1, delay: 0.7, color: '#ff2200' },
+  { id: 105, left: '31%', size: 6.5, duration: 6.9, delay: 2.4, color: '#ff5500' },
+  { id: 106, left: '38%', size: 4, duration: 7.2, delay: 4.0, color: '#ffaa00' },
+  { id: 107, left: '44%', size: 5.5, duration: 5.5, delay: 1.1, color: '#ff3700' },
+  { id: 108, left: '51%', size: 7, duration: 8.6, delay: 2.9, color: '#ff9900' },
+  { id: 109, left: '57%', size: 3.5, duration: 6.4, delay: 0.5, color: '#ff2200' },
+  { id: 110, left: '63%', size: 6, duration: 7.8, delay: 3.7, color: '#ff7700' },
+  { id: 111, left: '71%', size: 4.5, duration: 5.9, delay: 1.5, color: '#ff4500' },
+  { id: 112, left: '78%', size: 5, duration: 8.3, delay: 2.2, color: '#ffbb00' },
+  { id: 113, left: '85%', size: 6.5, duration: 6.7, delay: 0.9, color: '#ff2200' },
+  { id: 114, left: '92%', size: 4, duration: 7.4, delay: 3.4, color: '#ff6600' },
+  { id: 115, left: '97%', size: 5.5, duration: 6.1, delay: 1.9, color: '#ffaa00' },
+  { id: 116, left: '15%', size: 3, duration: 5.2, delay: 4.5, color: '#ff3300' },
+  { id: 117, left: '28%', size: 5.5, duration: 8.9, delay: 0.4, color: '#ff8800' },
+  { id: 118, left: '35%', size: 4, duration: 6.8, delay: 2.8, color: '#ff2200' },
+  { id: 119, left: '48%', size: 6, duration: 7.1, delay: 4.9, color: '#ffaa00' },
+  { id: 120, left: '60%', size: 3.5, duration: 5.7, delay: 1.3, color: '#ff5500' },
+  { id: 121, left: '68%', size: 7, duration: 8.0, delay: 3.0, color: '#ff9900' },
+  { id: 122, left: '82%', size: 4, duration: 6.5, delay: 0.8, color: '#ff3700' },
+  { id: 123, left: '89%', size: 5.5, duration: 7.6, delay: 2.6, color: '#ff7700' },
+  { id: 124, left: '22%', size: 4.5, duration: 6.3, delay: 3.8, color: '#ff4500' },
+  { id: 125, left: '54%', size: 5, duration: 7.9, delay: 1.7, color: '#ffbb00' },
+  { id: 126, left: '75%', size: 3.5, duration: 5.4, delay: 4.2, color: '#ff2200' },
+];
+
 export const GlobalBackgroundEffects: React.FC = () => {
   return (
     <div
@@ -43,6 +73,42 @@ export const GlobalBackgroundEffects: React.FC = () => {
           100% {
             transform: translateY(-70px) rotate(225deg) scale(0.9);
             opacity: 0.25;
+          }
+        }
+        @keyframes fireEmberRise {
+          0% {
+            transform: translateY(105vh) translateX(0px) scale(0.6);
+            opacity: 0;
+          }
+          10% {
+            opacity: 0.95;
+            transform: translateY(90vh) translateX(10px) scale(1.1);
+          }
+          40% {
+            opacity: 0.85;
+            transform: translateY(55vh) translateX(-18px) scale(0.95);
+          }
+          70% {
+            opacity: 0.5;
+            transform: translateY(25vh) translateX(15px) scale(0.75);
+          }
+          95% {
+            opacity: 0.15;
+            transform: translateY(-5vh) translateX(-22px) scale(0.4);
+          }
+          100% {
+            transform: translateY(-15vh) translateX(-30px) scale(0.2);
+            opacity: 0;
+          }
+        }
+        @keyframes fireFlickerGlow {
+          0%, 100% {
+            opacity: 0.18;
+            transform: scaleY(1);
+          }
+          50% {
+            opacity: 0.32;
+            transform: scaleY(1.15);
           }
         }
         @keyframes pulseNebulaVibrant {
@@ -111,6 +177,30 @@ export const GlobalBackgroundEffects: React.FC = () => {
         className="absolute top-[35%] left-[25%] w-[550px] h-[550px] rounded-full blur-[160px] bg-gradient-to-r from-vip-gold/20 via-amber-600/10 to-transparent pointer-events-none"
         style={{ animation: 'pulseNebulaVibrant 10s ease-in-out infinite 4s' }}
       />
+
+      {/* Fiery Combustion Base Glow at the Bottom */}
+      <div
+        className="absolute -bottom-16 left-0 right-0 h-64 pointer-events-none bg-gradient-to-t from-orange-600/25 via-red-950/15 to-transparent blur-3xl"
+        style={{ animation: 'fireFlickerGlow 4.5s ease-in-out infinite' }}
+      />
+
+      {/* 26 Rising Fire Ember Particles (particles fire) */}
+      {FIRE_PARTICLES.map((fire) => (
+        <span
+          key={fire.id}
+          className="absolute rounded-full pointer-events-none"
+          style={{
+            bottom: '0',
+            left: fire.left,
+            width: `${fire.size}px`,
+            height: `${fire.size * 1.25}px`,
+            backgroundColor: fire.color,
+            boxShadow: `0 0 8px ${fire.color}, 0 0 16px ${fire.color}, 0 0 28px rgba(255, 69, 0, 0.7)`,
+            animation: `fireEmberRise ${fire.duration}s cubic-bezier(0.25, 0.46, 0.45, 0.94) infinite`,
+            animationDelay: `${fire.delay}s`,
+          }}
+        />
+      ))}
 
       {/* 18 Floating Diamond Sparkle Gems with Luminous Halo */}
       {FLOATING_GEMS.map((gem) => (

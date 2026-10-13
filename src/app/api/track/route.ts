@@ -78,6 +78,8 @@ export async function GET(request: NextRequest) {
         playerUid: order.playerUid,
         playerName: order.playerName,
         diamonds: order.package?.diamonds || 100,
+        packageName: order.package?.name || null,
+        packageCategory: order.package?.category || null,
         originalPrice: order.originalPrice,
         discountAmount: order.discountAmount,
         finalPrice: order.finalPrice,

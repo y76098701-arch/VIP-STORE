@@ -405,10 +405,12 @@ function TrackInner() {
                   </span>
                 </div>
                 <div>
-                  <span className="text-xs text-vip-text-muted block">{t('diamonds')}</span>
+                  <span className="text-xs text-vip-text-muted block">
+                    {order.packageName ? (language === 'ar' ? 'الباقة / العرض' : 'Package') : t('diamonds')}
+                  </span>
                   <span className="text-base font-extrabold text-vip-gold flex items-center gap-1">
-                    <Gem className="w-4 h-4" />
-                    {order.diamonds?.toLocaleString()}
+                    <Gem className="w-4 h-4 shrink-0" />
+                    <span className="truncate">{order.packageName || `${order.diamonds?.toLocaleString()} ${t('diamonds')}`}</span>
                   </span>
                 </div>
                 <div>
