@@ -78,19 +78,26 @@ export async function POST(request: NextRequest) {
       }
     }
 
-    const uniqueId = crypto.randomUUID();
-    const filename = `${uniqueId}.${ext}`;
-    const uploadDir = path.join(process.cwd(), 'public', 'uploads');
-
-    await mkdir(uploadDir, { recursive: true });
-
     const bytes = await file.arrayBuffer();
     const buffer = Buffer.from(bytes);
-    const filePath = path.join(uploadDir, filename);
 
-    await writeFile(filePath, buffer);
+    // Default to Base64 data URL (works in all environments, zero disk dependency)
+    let receiptUrl = `data:${file.type || 'image/jpeg'};base64,${buffer.toString('base64')}`;
 
-    const receiptUrl = `/uploads/${filename}`;
+    // On local machine with writable filesystem, optionally save to disk
+    if (!process.env.VERCEL) {
+      try {
+        const uniqueId = crypto.randomUUID();
+        const filename = `${uniqueId}.${ext}`;
+        const uploadDir = path.join(process.cwd(), 'public', 'uploads');
+        await mkdir(uploadDir, { recursive: true });
+        const filePath = path.join(uploadDir, filename);
+        await writeFile(filePath, buffer);
+        receiptUrl = `/uploads/${filename}`;
+      } catch (err) {
+        console.warn('Filesystem write failed, using base64 data URI instead:', err);
+      }
+    }
 
     // Update order status and record history
     await prisma.$transaction([

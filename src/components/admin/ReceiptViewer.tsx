@@ -44,18 +44,26 @@ export const ReceiptViewer: React.FC<ReceiptViewerProps> = ({
             </div>
 
             <div className="flex items-center justify-between w-full pt-2 border-t border-vip-border/60">
-              <span className="text-xs text-vip-text-muted truncate max-w-[200px] sm:max-w-xs">
-                {url}
+              <span className="text-xs text-vip-text-muted truncate max-w-[200px] sm:max-w-xs font-mono">
+                {url.startsWith('data:') ? 'صورة إيصال التحويل (Data URI)' : url}
               </span>
-              <a
-                href={url}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold rounded-lg bg-vip-purple/15 text-vip-purple-light border border-vip-purple/30 hover:bg-vip-purple/25 transition-colors"
+              <button
+                type="button"
+                onClick={() => {
+                  if (url.startsWith('data:')) {
+                    const win = window.open();
+                    if (win) {
+                      win.document.write(`<title>Receipt</title><body style="margin:0;background:#0d0d14;display:flex;align-items:center;justify-content:center;min-height:100vh;"><img src="${url}" style="max-width:95%;max-height:95vh;object-fit:contain;border-radius:8px;" /></body>`);
+                    }
+                  } else {
+                    window.open(url, '_blank', 'noopener,noreferrer');
+                  }
+                }}
+                className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold rounded-lg bg-vip-purple/15 text-vip-purple-light border border-vip-purple/30 hover:bg-vip-purple/25 transition-colors cursor-pointer"
               >
                 <ExternalLink className="w-3.5 h-3.5" />
                 <span>{isArabic ? 'فتح بحجم كامل' : 'Open in New Tab'}</span>
-              </a>
+              </button>
             </div>
           </div>
         ) : (
