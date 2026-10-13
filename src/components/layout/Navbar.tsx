@@ -7,6 +7,7 @@ import { Menu, X, Gem, Home, Zap, Search } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useLanguageContext } from '@/contexts/LanguageContext';
 import { LanguageSwitcher } from './LanguageSwitcher';
+import { WhatsAppIcon } from '@/components/ui/WhatsAppHelpButton';
 import { cn } from '@/lib/utils';
 
 export const Navbar: React.FC = () => {
@@ -88,8 +89,20 @@ export const Navbar: React.FC = () => {
             })}
           </nav>
 
-          {/* Right Action / Language Switcher & Hamburger */}
-          <div className="flex items-center gap-3">
+          {/* Right Action / Language Switcher & WhatsApp Help & Hamburger */}
+          <div className="flex items-center gap-2 sm:gap-3">
+            {/* WhatsApp Quick Help Button */}
+            <a
+              href="https://wa.me//+201069954152"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-emerald-500/10 hover:bg-emerald-500/20 border border-emerald-500/30 text-emerald-400 hover:text-emerald-300 text-xs font-bold transition-all shadow-sm hover:shadow-[0_0_15px_rgba(34,197,94,0.25)] select-none"
+              title="تواصل معنا عبر واتساب للمساعدة"
+            >
+              <WhatsAppIcon className="w-3.5 h-3.5 text-emerald-400" />
+              <span className="hidden sm:inline">المساعدة</span>
+            </a>
+
             <LanguageSwitcher />
 
             {/* Mobile Menu Toggle Button */}
@@ -134,6 +147,17 @@ export const Navbar: React.FC = () => {
                   </Link>
                 );
               })}
+
+              {/* WhatsApp Help in Mobile Drawer */}
+              <a
+                href="https://wa.me//+201069954152"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="flex items-center gap-3 px-4 py-3 rounded-xl text-base font-semibold bg-emerald-500/10 border border-emerald-500/30 text-emerald-400 hover:bg-emerald-500/20 transition-all mt-2"
+              >
+                <WhatsAppIcon className="w-5 h-5 text-emerald-400" />
+                <span>المساعدة والدعم (واتساب)</span>
+              </a>
             </div>
           </motion.div>
         )}

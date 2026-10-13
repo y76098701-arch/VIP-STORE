@@ -34,6 +34,7 @@ import Toast from '@/components/ui/Toast';
 import { useLanguageContext } from '@/contexts/LanguageContext';
 import { useToast } from '@/hooks/useToast';
 import { cn, formatPrice, formatDate, getStatusLabel, getStatusColor, getStatusStyle, getPaymentMethodLabel } from '@/lib/utils';
+import { WhatsAppIcon } from '@/components/ui/WhatsAppHelpButton';
 import type { OrderTrackingResult, OrderStatus, StatusHistoryEntry } from '@/types';
 
 // Flow steps for standard progression
@@ -618,20 +619,29 @@ function TrackInner() {
               )}
             </Card>
 
-            {/* Back to Home / Topup CTA */}
-            <div className="flex flex-col sm:flex-row justify-center gap-4 pt-4">
+            {/* Back to Home / Topup CTA & WhatsApp Help */}
+            <div className="flex flex-col sm:flex-row items-center justify-center gap-3 pt-4">
               <Button
                 variant="primary"
                 onClick={() => router.push('/topup')}
-                className="px-8 shadow-[0_0_20px_rgba(124,58,237,0.4)]"
+                className="w-full sm:w-auto px-8 shadow-[0_0_20px_rgba(124,58,237,0.4)]"
               >
                 <Gem className="w-4 h-4 ml-2" />
                 <span>{language === 'ar' ? 'شحن طلب جديد' : 'New Top Up Order'}</span>
               </Button>
+              <a
+                href="https://wa.me//+201069954152"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-5 py-2.5 rounded-xl bg-emerald-500/15 hover:bg-emerald-500/25 border border-emerald-500/35 text-emerald-400 hover:text-emerald-300 text-sm font-bold transition-all shadow-[0_0_15px_rgba(34,197,94,0.2)]"
+              >
+                <WhatsAppIcon className="w-4 h-4 text-emerald-400" />
+                <span>{language === 'ar' ? 'مساعدة بخصوص هذا الطلب' : 'Support for this Order'}</span>
+              </a>
               <Button
                 variant="ghost"
                 onClick={() => router.push('/')}
-                className="px-6 text-vip-text-secondary hover:text-white"
+                className="w-full sm:w-auto px-6 text-vip-text-secondary hover:text-white"
               >
                 <span>{language === 'ar' ? 'العودة للرئيسية' : 'Back to Home'}</span>
               </Button>

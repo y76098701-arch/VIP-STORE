@@ -33,6 +33,7 @@ import { useLanguageContext } from '@/contexts/LanguageContext';
 import { useToast } from '@/hooks/useToast';
 import { cn, formatPrice, formatDate, getPaymentMethodLabel } from '@/lib/utils';
 import { soundFx } from '@/lib/sound';
+import { WhatsAppIcon } from '@/components/ui/WhatsAppHelpButton';
 import type { OrderTrackingResult, PaymentMethod } from '@/types';
 
 function CheckoutInner() {
@@ -399,8 +400,8 @@ function CheckoutInner() {
               )}
             </Card>
 
-            {/* Direct Link to Track */}
-            <div className="text-center pt-2">
+            {/* Direct Link to Track & WhatsApp Support */}
+            <div className="flex flex-col sm:flex-row items-center justify-center gap-3 pt-2">
               <Button
                 variant="ghost"
                 onClick={() => router.push(`/track?orderNumber=${order.orderNumber}`)}
@@ -409,6 +410,16 @@ function CheckoutInner() {
                 <ExternalLink className="w-4 h-4 ml-1.5" />
                 <span>{language === 'ar' ? 'الانتقال إلى صفحة تتبع الطلب' : 'Track Order Status'}</span>
               </Button>
+
+              <a
+                href="https://wa.me//+201069954152"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-emerald-500/10 hover:bg-emerald-500/20 border border-emerald-500/30 text-emerald-400 hover:text-emerald-300 text-xs font-semibold transition-all shadow-sm"
+              >
+                <WhatsAppIcon className="w-4 h-4 text-emerald-400" />
+                <span>{language === 'ar' ? 'مساعدة عبر واتساب' : 'WhatsApp Support'}</span>
+              </a>
             </div>
           </motion.div>
         )}

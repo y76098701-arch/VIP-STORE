@@ -3,6 +3,7 @@
 import React from 'react';
 import Link from 'next/link';
 import { Gem, ShieldCheck, Zap, Heart } from 'lucide-react';
+import { WhatsAppIcon } from '@/components/ui/WhatsAppHelpButton';
 import { useLanguageContext } from '@/contexts/LanguageContext';
 
 export const Footer: React.FC = () => {
@@ -43,6 +44,15 @@ export const Footer: React.FC = () => {
             >
               {t('tracking')}
             </Link>
+            <a
+              href="https://wa.me//+201069954152"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="text-emerald-400 hover:text-emerald-300 transition-colors hover:underline underline-offset-4 flex items-center gap-1.5 font-medium"
+            >
+              <WhatsAppIcon className="w-4 h-4 text-emerald-400" />
+              <span>المساعدة (واتساب)</span>
+            </a>
             <Link
               href="/admin"
               className="text-amber-400/80 hover:text-amber-400 transition-colors hover:underline underline-offset-4 flex items-center gap-1 font-medium"
