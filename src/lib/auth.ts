@@ -43,5 +43,5 @@ export const authOptions: NextAuthOptions = {
     },
   },
   pages: { signIn: '/admin/login' },
-  secret: process.env.NEXTAUTH_SECRET,
+  secret: process.env.NEXTAUTH_SECRET || 'vip_store_secret_2026_super_secure_key_min32chars',
 };
