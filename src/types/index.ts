@@ -59,6 +59,7 @@ export interface OrderTrackingResult {
   diamonds: number;
   packageName?: string | null;
   packageCategory?: string | null;
+  packageBadge?: string | null;
   originalPrice: number;
   discountAmount: number;
   finalPrice: number;

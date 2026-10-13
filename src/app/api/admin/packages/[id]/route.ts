@@ -3,6 +3,9 @@ import { z } from 'zod';
 import { prisma } from '@/lib/db';
 
 const updatePackageSchema = z.object({
+  name: z.string().nullable().optional(),
+  category: z.string().optional(),
+  badge: z.string().nullable().optional(),
   diamonds: z.coerce.number().int().positive().optional(),
   price: z.coerce.number().positive().optional(),
   currency: z.string().optional(),

@@ -5,9 +5,12 @@ import type { DiamondPackage } from '@/types';
 import { Input } from '@/components/ui/Input';
 import { Button } from '@/components/ui/Button';
 import { useLanguageContext } from '@/contexts/LanguageContext';
-import { Gem, DollarSign, ArrowUpDown, CheckSquare, Square } from 'lucide-react';
+import { Gem, DollarSign, ArrowUpDown, CheckSquare, Square, Tag, Layers } from 'lucide-react';
 
 export interface PackageFormData {
+  name?: string;
+  category?: string;
+  badge?: string;
   diamonds: number;
   price: number;
   sortOrder: number;
@@ -34,6 +37,9 @@ export const PackageForm: React.FC<PackageFormProps> = ({
   const { language } = useLanguageContext();
   const isArabic = language === 'ar';
 
+  const [name, setName] = useState<string>('');
+  const [category, setCategory] = useState<string>('DIAMONDS');
+  const [badge, setBadge] = useState<string>('');
   const [diamonds, setDiamonds] = useState<string>('');
   const [price, setPrice] = useState<string>('');
   const [sortOrder, setSortOrder] = useState<string>('0');
@@ -42,11 +48,17 @@ export const PackageForm: React.FC<PackageFormProps> = ({
 
   useEffect(() => {
     if (currentPkg) {
+      setName(currentPkg.name || '');
+      setCategory(currentPkg.category || 'DIAMONDS');
+      setBadge(currentPkg.badge || '');
       setDiamonds(String(currentPkg.diamonds));
       setPrice(String(currentPkg.price));
       setSortOrder(String(currentPkg.sortOrder ?? 0));
       setIsActive(currentPkg.isActive ?? true);
     } else {
+      setName('');
+      setCategory('DIAMONDS');
+      setBadge('');
       setDiamonds('');
       setPrice('');
       setSortOrder('0');
@@ -88,6 +100,9 @@ export const PackageForm: React.FC<PackageFormProps> = ({
     if (!validate()) return;
 
     await onSubmit({
+      name: name.trim() || undefined,
+      category: category || 'DIAMONDS',
+      badge: badge.trim() || undefined,
       diamonds: parseInt(diamonds, 10),
       price: parseFloat(price),
       sortOrder: parseInt(sortOrder, 10) || 0,
@@ -97,13 +112,92 @@ export const PackageForm: React.FC<PackageFormProps> = ({
   };
 
   return (
-    <form onSubmit={handleSubmit} className="space-y-5">
+    <form onSubmit={handleSubmit} className="space-y-4">
+      {/* Name / Title */}
+      <div>
+        <label className="block text-xs md:text-sm font-medium text-vip-text-secondary mb-1.5 select-none">
+          <span className="flex items-center gap-1.5">
+            <Tag className="w-4 h-4 text-vip-purple-light" />
+            {isArabic ? 'اسم الباقة / العرض (اختياري للدروبات والعضويات)' : 'Package Name (e.g. Airdrop $2)'}
+          </span>
+        </label>
+        <Input
+          type="text"
+          value={name}
+          onChange={(e) => setName(e.target.value)}
+          placeholder={isArabic ? 'مثال: دروب 2 دولار أو عضوية أسبوعية' : 'e.g. Airdrop $2 or Weekly Membership'}
+          disabled={loading}
+        />
+        <p className="text-[11px] text-vip-text-muted mt-1">
+          {isArabic ? 'اتركه فارغاً إذا كانت باقة جواهر عادية ليظهر عدد الجواهر فقط' : 'Leave empty for regular diamond packs'}
+        </p>
+      </div>
+
+      {/* Category Selection */}
+      <div>
+        <label className="block text-xs md:text-sm font-medium text-vip-text-secondary mb-1.5 select-none">
+          <span className="flex items-center gap-1.5">
+            <Layers className="w-4 h-4 text-vip-cyan" />
+            {isArabic ? 'نوع وتصنيف الباقة' : 'Category'}
+          </span>
+        </label>
+        <div className="grid grid-cols-3 gap-2">
+          <button
+            type="button"
+            onClick={() => setCategory('DIAMONDS')}
+            className={`py-2 px-3 rounded-xl text-xs font-bold border transition-colors ${
+              category === 'DIAMONDS'
+                ? 'bg-vip-gold/20 text-vip-gold border-vip-gold/40'
+                : 'bg-vip-card text-vip-text-secondary border-vip-border'
+            }`}
+          >
+            💎 {isArabic ? 'جواهر' : 'Diamonds'}
+          </button>
+          <button
+            type="button"
+            onClick={() => setCategory('MEMBERSHIP')}
+            className={`py-2 px-3 rounded-xl text-xs font-bold border transition-colors ${
+              category === 'MEMBERSHIP'
+                ? 'bg-amber-500/20 text-amber-300 border-amber-400/40'
+                : 'bg-vip-card text-vip-text-secondary border-vip-border'
+            }`}
+          >
+            👑 {isArabic ? 'عضوية VIP' : 'Membership'}
+          </button>
+          <button
+            type="button"
+            onClick={() => setCategory('AIRDROP')}
+            className={`py-2 px-3 rounded-xl text-xs font-bold border transition-colors ${
+              category === 'AIRDROP'
+                ? 'bg-rose-500/20 text-rose-300 border-rose-400/40'
+                : 'bg-vip-card text-vip-text-secondary border-vip-border'
+            }`}
+          >
+            🎁 {isArabic ? 'دروب خاص' : 'Airdrop'}
+          </button>
+        </div>
+      </div>
+
+      {/* Badge */}
+      <div>
+        <label className="block text-xs md:text-sm font-medium text-vip-text-secondary mb-1.5 select-none">
+          {isArabic ? 'شارة مميزة (Badge)' : 'Badge Label'}
+        </label>
+        <Input
+          type="text"
+          value={badge}
+          onChange={(e) => setBadge(e.target.value)}
+          placeholder={isArabic ? 'مثال: دروب 2$ أو أسبوعية VIP' : 'e.g. VIP or Airdrop $2'}
+          disabled={loading}
+        />
+      </div>
+
       {/* Diamonds */}
       <div>
         <label className="block text-xs md:text-sm font-medium text-vip-text-secondary mb-1.5 select-none">
           <span className="flex items-center gap-1.5">
             <Gem className="w-4 h-4 text-cyan-400" />
-            {isArabic ? 'عدد الجواهر' : 'Diamonds Count'}
+            {isArabic ? 'عدد الجواهر (أو قيمة الدروب بالجواهر)' : 'Diamonds Count'}
           </span>
         </label>
         <Input
@@ -112,7 +206,7 @@ export const PackageForm: React.FC<PackageFormProps> = ({
           step="1"
           value={diamonds}
           onChange={(e) => setDiamonds(e.target.value)}
-          placeholder={isArabic ? 'مثال: 520' : 'e.g. 520'}
+          placeholder={isArabic ? 'مثال: 300' : 'e.g. 300'}
           error={errors.diamonds}
           disabled={loading}
           required
@@ -124,7 +218,7 @@ export const PackageForm: React.FC<PackageFormProps> = ({
         <label className="block text-xs md:text-sm font-medium text-vip-text-secondary mb-1.5 select-none">
           <span className="flex items-center gap-1.5">
             <DollarSign className="w-4 h-4 text-amber-400" />
-            {isArabic ? 'السعر (ج.م)' : 'Price (EGP)'}
+            {isArabic ? 'السعر الحقيقي قبل الخصم (ج.م)' : 'Original Price (EGP)'}
           </span>
         </label>
         <Input
@@ -133,7 +227,7 @@ export const PackageForm: React.FC<PackageFormProps> = ({
           step="0.01"
           value={price}
           onChange={(e) => setPrice(e.target.value)}
-          placeholder={isArabic ? 'مثال: 125' : 'e.g. 125'}
+          placeholder={isArabic ? 'مثال: 90' : 'e.g. 90'}
           error={errors.price}
           disabled={loading}
           required
@@ -157,15 +251,10 @@ export const PackageForm: React.FC<PackageFormProps> = ({
           error={errors.sortOrder}
           disabled={loading}
         />
-        <p className="text-[11px] text-vip-text-muted mt-1">
-          {isArabic
-            ? 'الأرقام الأصغر تظهر أولاً في قائمة الباقات'
-            : 'Lower numbers appear first in the packages list'}
-        </p>
       </div>
 
       {/* Is Active Toggle */}
-      <div className="pt-2">
+      <div className="pt-1">
         <label
           onClick={() => !loading && setIsActive(!isActive)}
           className="flex items-center gap-3 p-3 rounded-xl border border-vip-border bg-vip-card/50 hover:bg-vip-card cursor-pointer select-none transition-colors"
@@ -177,39 +266,44 @@ export const PackageForm: React.FC<PackageFormProps> = ({
           )}
           <div className="flex flex-col">
             <span className="text-sm font-medium text-vip-text-primary">
-              {isArabic ? 'تفعيل الباقة' : 'Active Package'}
+              {isArabic ? 'تفعيل الباقة / العرض' : 'Active Package'}
             </span>
-            <span className="text-[11px] text-vip-text-muted">
+            <span className="text-xs text-vip-text-muted">
               {isArabic
-                ? 'عند التفعيل تظهر الباقة للعملاء في صفحة الشحن'
-                : 'When active, this package is available for customers to purchase'}
+                ? 'الباقات المفعلة فقط هي التي تظهر للعملاء في صفحة الشحن'
+                : 'Only active packages are visible to customers on topup'}
             </span>
           </div>
         </label>
       </div>
 
-      {/* Buttons */}
-      <div className="flex items-center justify-end gap-3 pt-4 border-t border-vip-border/60">
+      {/* Form Buttons */}
+      <div className="flex items-center justify-end gap-3 pt-3 border-t border-vip-border/60">
         <Button
           type="button"
           variant="secondary"
+          size="md"
           onClick={onCancel}
           disabled={loading}
         >
           {isArabic ? 'إلغاء' : 'Cancel'}
         </Button>
-        <Button type="submit" variant="primary" loading={loading}>
+        <Button
+          type="submit"
+          variant="primary"
+          size="md"
+          loading={loading}
+          disabled={loading}
+        >
           {currentPkg
             ? isArabic
-              ? 'تحديث الباقة'
-              : 'Update Package'
+              ? 'حفظ التعديلات'
+              : 'Save Changes'
             : isArabic
             ? 'إضافة الباقة'
-            : 'Add Package'}
+            : 'Create Package'}
         </Button>
       </div>
     </form>
   );
 };
-
-export default PackageForm;

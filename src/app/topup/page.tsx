@@ -830,10 +830,22 @@ function TopupInner() {
                     </span>
                   </div>
                   <div>
-                    <span className="text-xs text-vip-text-muted block">{t('featuredPackages')}</span>
-                    <span className="text-base font-bold text-vip-gold flex items-center gap-1">
-                      <Gem className="w-4 h-4" />
-                      {selectedPackage.diamonds.toLocaleString()} {t('diamonds')}
+                    <span className="text-xs text-vip-text-muted block">
+                      {selectedPackage.name ? (language === 'ar' ? 'الباقة / العرض' : 'Package / Offering') : t('featuredPackages')}
+                    </span>
+                    <span className="text-base font-bold text-vip-gold flex items-center gap-1.5">
+                      {selectedPackage.category === 'MEMBERSHIP' ? (
+                        <Crown className="w-4 h-4 text-amber-400 shrink-0" />
+                      ) : selectedPackage.category === 'AIRDROP' ? (
+                        <Flame className="w-4 h-4 text-rose-400 shrink-0" />
+                      ) : (
+                        <Gem className="w-4 h-4 text-cyan-400 shrink-0" />
+                      )}
+                      <span>
+                        {selectedPackage.name
+                          ? `${selectedPackage.name} (${selectedPackage.diamonds.toLocaleString()} 💎)`
+                          : `${selectedPackage.diamonds.toLocaleString()} ${t('diamonds')}`}
+                      </span>
                     </span>
                   </div>
                 </div>
@@ -1002,6 +1014,30 @@ function TopupInner() {
                     <CopyButton text={orderResult.orderNumber} label={language === 'ar' ? 'نسخ رقم الطلب' : 'Copy Order ID'} />
                   </div>
                 </div>
+
+                {/* Selected Package Banner */}
+                {selectedPackage && (
+                  <div className="mt-4 pt-4 border-t border-vip-border/40 flex flex-wrap items-center justify-between gap-3 bg-vip-purple/10 p-3 rounded-xl">
+                    <span className="text-xs text-vip-text-muted flex items-center gap-1.5">
+                      {selectedPackage.category === 'MEMBERSHIP' ? (
+                        <Crown className="w-4 h-4 text-amber-400" />
+                      ) : selectedPackage.category === 'AIRDROP' ? (
+                        <Flame className="w-4 h-4 text-rose-400" />
+                      ) : (
+                        <Gem className="w-4 h-4 text-cyan-400" />
+                      )}
+                      <span>{language === 'ar' ? 'الباقة / العرض:' : 'Package / Offering:'}</span>
+                    </span>
+                    <span className="font-extrabold text-sm text-white flex items-center gap-2">
+                      <span>{selectedPackage.name ? `${selectedPackage.name} (${selectedPackage.diamonds.toLocaleString()} 💎)` : `${selectedPackage.diamonds.toLocaleString()} ${t('diamonds')}`}</span>
+                      {selectedPackage.badge && (
+                        <span className="text-[10px] px-2 py-0.5 rounded-full bg-vip-purple/20 text-vip-purple-light border border-vip-purple/40 font-bold">
+                          {selectedPackage.badge}
+                        </span>
+                      )}
+                    </span>
+                  </div>
+                )}
 
                 {/* Price Breakdown */}
                 <div className="mt-6 pt-6 border-t border-vip-border/60 grid grid-cols-2 sm:grid-cols-4 gap-4">

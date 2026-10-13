@@ -13,6 +13,8 @@ import {
   ToggleLeft,
   ToggleRight,
   AlertTriangle,
+  Crown,
+  Flame,
 } from 'lucide-react';
 import type { DiamondPackage } from '@/types';
 import { Button } from '@/components/ui/Button';
@@ -339,18 +341,50 @@ export default function AdminPackagesPage() {
                     </button>
                   </div>
 
-                  {/* Diamonds display */}
+                  {/* Package Title & Diamonds display */}
                   <div className="flex items-center gap-3 mb-3">
-                    <div className="w-12 h-12 rounded-xl bg-cyan-500/10 border border-cyan-500/30 flex items-center justify-center text-cyan-400 shadow-inner">
-                      <Gem className="w-6 h-6" />
+                    <div className={`w-12 h-12 rounded-xl flex items-center justify-center shadow-inner shrink-0 ${
+                      pkg.category === 'MEMBERSHIP'
+                        ? 'bg-amber-500/15 border border-amber-500/30 text-amber-400'
+                        : pkg.category === 'AIRDROP'
+                        ? 'bg-rose-500/15 border border-rose-500/30 text-rose-400'
+                        : 'bg-cyan-500/10 border border-cyan-500/30 text-cyan-400'
+                    }`}>
+                      {pkg.category === 'MEMBERSHIP' ? (
+                        <Crown className="w-6 h-6 text-amber-400" />
+                      ) : pkg.category === 'AIRDROP' ? (
+                        <Flame className="w-6 h-6 text-rose-400" />
+                      ) : (
+                        <Gem className="w-6 h-6" />
+                      )}
                     </div>
-                    <div>
-                      <h3 className="text-xl font-black text-cyan-400 font-mono">
-                        {pkg.diamonds.toLocaleString()}
-                      </h3>
-                      <span className="text-xs text-vip-text-secondary font-medium">
-                        {isArabic ? 'جوهرة فري فاير' : 'Free Fire Diamonds'}
-                      </span>
+                    <div className="flex-1 min-w-0">
+                      {pkg.name ? (
+                        <div>
+                          <div className="flex items-center gap-1.5 flex-wrap">
+                            <h3 className="text-lg font-black text-white leading-tight">
+                              {pkg.name}
+                            </h3>
+                            {pkg.badge && (
+                              <span className="text-[10px] px-1.5 py-0.2 rounded font-bold bg-vip-purple/20 text-vip-purple-light border border-vip-purple/30">
+                                {pkg.badge}
+                              </span>
+                            )}
+                          </div>
+                          <span className="text-xs text-cyan-400 font-semibold font-mono block mt-0.5">
+                            {pkg.diamonds.toLocaleString()} {isArabic ? 'جوهرة' : 'Diamonds'}
+                          </span>
+                        </div>
+                      ) : (
+                        <div>
+                          <h3 className="text-xl font-black text-cyan-400 font-mono">
+                            {pkg.diamonds.toLocaleString()}
+                          </h3>
+                          <span className="text-xs text-vip-text-secondary font-medium">
+                            {isArabic ? 'جوهرة فري فاير' : 'Free Fire Diamonds'}
+                          </span>
+                        </div>
+                      )}
                     </div>
                   </div>
 

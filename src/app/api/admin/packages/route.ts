@@ -3,6 +3,9 @@ import { z } from 'zod';
 import { prisma } from '@/lib/db';
 
 const createPackageSchema = z.object({
+  name: z.string().optional(),
+  category: z.string().optional(),
+  badge: z.string().optional(),
   diamonds: z.coerce.number().int().positive('Diamonds count must be a positive integer'),
   price: z.coerce.number().positive('Price must be greater than zero'),
   currency: z.string().default('EGP').optional(),
@@ -43,10 +46,13 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    const { diamonds, price, currency, sortOrder, isActive } = parseResult.data;
+    const { name, category, badge, diamonds, price, currency, sortOrder, isActive } = parseResult.data;
 
     const newPackage = await prisma.diamondPackage.create({
       data: {
+        name: name || null,
+        category: category || 'DIAMONDS',
+        badge: badge || null,
         diamonds,
         price,
         currency: currency || 'EGP',

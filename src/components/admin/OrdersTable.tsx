@@ -1,7 +1,7 @@
 'use client';
 
 import React from 'react';
-import { Eye, Gem, ShoppingCart } from 'lucide-react';
+import { Eye, Gem, ShoppingCart, Crown, Flame } from 'lucide-react';
 import type { Order } from '@/types';
 import { Badge } from '@/components/ui/Badge';
 import { Button } from '@/components/ui/Button';
@@ -57,7 +57,7 @@ export const OrdersTable: React.FC<OrdersTableProps> = ({
                 {isArabic ? 'معرف اللاعب (UID)' : 'Player UID'}
               </th>
               <th className="py-3.5 px-4 text-start font-semibold">
-                {isArabic ? 'الجواهر' : 'Diamonds'}
+                {isArabic ? 'الباقة / العرض' : 'Package / Offering'}
               </th>
               <th className="py-3.5 px-4 text-start font-semibold">
                 {isArabic ? 'المبلغ' : 'Amount'}
@@ -76,6 +76,27 @@ export const OrdersTable: React.FC<OrdersTableProps> = ({
           <tbody className="divide-y divide-vip-border/50">
             {orders.map((order, index) => {
               const diamondsCount = order.package?.diamonds;
+              let pkgName = order.package?.name;
+              let pkgCategory = order.package?.category;
+              let pkgBadge = order.package?.badge;
+
+              // Intelligent fallback if name wasn't set on older order records
+              if (!pkgName) {
+                if (diamondsCount === 300) {
+                  pkgName = 'دروب 2 دولار';
+                  pkgCategory = 'AIRDROP';
+                  pkgBadge = 'دروب 2 USD';
+                } else if (diamondsCount === 450) {
+                  pkgName = 'عضوية أسبوعية';
+                  pkgCategory = 'MEMBERSHIP';
+                  pkgBadge = 'أسبوعية VIP';
+                } else if (diamondsCount === 2600) {
+                  pkgName = 'عضوية شهرية';
+                  pkgCategory = 'MEMBERSHIP';
+                  pkgBadge = 'شهرية VIP';
+                }
+              }
+
               const formattedPrice = isArabic
                 ? formatPrice(order.finalPrice)
                 : formatPriceEn(order.finalPrice);
@@ -113,11 +134,30 @@ export const OrdersTable: React.FC<OrdersTableProps> = ({
                     </div>
                   </td>
 
-                  {/* Diamonds */}
+                  {/* Package & Diamonds */}
                   <td className="py-3.5 px-4 whitespace-nowrap">
-                    <div className="inline-flex items-center gap-1.5 font-bold text-cyan-400">
-                      <Gem className="w-3.5 h-3.5 shrink-0" />
-                      <span>{diamondsCount ? diamondsCount.toLocaleString() : '-'}</span>
+                    <div className="flex flex-col">
+                      {pkgName ? (
+                        <div className="flex items-center gap-1.5 font-bold text-white mb-0.5">
+                          {pkgCategory === 'MEMBERSHIP' ? (
+                            <Crown className="w-3.5 h-3.5 text-amber-400 shrink-0" />
+                          ) : pkgCategory === 'AIRDROP' ? (
+                            <Flame className="w-3.5 h-3.5 text-rose-400 shrink-0" />
+                          ) : (
+                            <Gem className="w-3.5 h-3.5 text-cyan-400 shrink-0" />
+                          )}
+                          <span className="text-sm font-black text-white">{pkgName}</span>
+                          {pkgBadge && (
+                            <span className="text-[10px] px-1.5 py-0.2 rounded bg-vip-purple/20 text-vip-purple-light border border-vip-purple/30">
+                              {pkgBadge}
+                            </span>
+                          )}
+                        </div>
+                      ) : null}
+                      <div className="inline-flex items-center gap-1 text-xs font-semibold text-cyan-400">
+                        <Gem className="w-3 h-3 shrink-0" />
+                        <span>{diamondsCount ? diamondsCount.toLocaleString() : '-'} {isArabic ? 'جوهرة' : 'Diamonds'}</span>
+                      </div>
                     </div>
                   </td>
 

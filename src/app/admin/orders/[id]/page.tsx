@@ -21,6 +21,8 @@ import {
   ShieldCheck,
   Send,
   ExternalLink,
+  Crown,
+  Flame,
 } from 'lucide-react';
 import type { Order, OrderStatus } from '@/types';
 import { Card } from '@/components/ui/Card';
@@ -487,14 +489,59 @@ export default function OrderDetailPage({
               </div>
 
               <div className="p-3.5 rounded-xl bg-vip-bg border border-vip-border space-y-1">
-                <span className="text-xs text-vip-text-muted flex items-center gap-1.5">
-                  <Gem className="w-3.5 h-3.5 text-cyan-400" />
-                  {isArabic ? 'الباقة المطلوبة' : 'Package'}
-                </span>
-                <p className="font-bold text-base text-cyan-400">
-                  {order.package?.diamonds.toLocaleString()} {isArabic ? 'جوهرة' : 'Diamonds'}
-                </p>
-                <p className="text-xs text-vip-text-muted">
+                {(() => {
+                  const pkgDiamonds = order.package?.diamonds;
+                  let pkgName = order.package?.name;
+                  let pkgCategory = order.package?.category;
+                  let pkgBadge = order.package?.badge;
+
+                  if (!pkgName) {
+                    if (pkgDiamonds === 300) {
+                      pkgName = 'دروب 2 دولار';
+                      pkgCategory = 'AIRDROP';
+                      pkgBadge = 'دروب 2 USD';
+                    } else if (pkgDiamonds === 450) {
+                      pkgName = 'عضوية أسبوعية';
+                      pkgCategory = 'MEMBERSHIP';
+                      pkgBadge = 'أسبوعية VIP';
+                    } else if (pkgDiamonds === 2600) {
+                      pkgName = 'عضوية شهرية';
+                      pkgCategory = 'MEMBERSHIP';
+                      pkgBadge = 'شهرية VIP';
+                    }
+                  }
+
+                  return (
+                    <>
+                      <span className="text-xs text-vip-text-muted flex items-center gap-1.5">
+                        {pkgCategory === 'MEMBERSHIP' ? (
+                          <Crown className="w-3.5 h-3.5 text-amber-400" />
+                        ) : pkgCategory === 'AIRDROP' ? (
+                          <Flame className="w-3.5 h-3.5 text-rose-400" />
+                        ) : (
+                          <Gem className="w-3.5 h-3.5 text-cyan-400" />
+                        )}
+                        {isArabic ? 'الباقة / العرض' : 'Package / Offering'}
+                      </span>
+                      <div>
+                        {pkgName && (
+                          <p className="font-black text-lg text-white leading-tight flex items-center gap-2">
+                            <span>{pkgName}</span>
+                            {pkgBadge && (
+                              <span className="text-[10px] px-2 py-0.5 rounded-full bg-vip-purple/20 text-vip-purple-light border border-vip-purple/40 font-bold">
+                                {pkgBadge}
+                              </span>
+                            )}
+                          </p>
+                        )}
+                        <p className="font-bold text-sm text-cyan-400 mt-0.5">
+                          {pkgDiamonds ? pkgDiamonds.toLocaleString() : '-'} {isArabic ? 'جوهرة' : 'Diamonds'}
+                        </p>
+                      </div>
+                    </>
+                  );
+                })()}
+                <p className="text-xs text-vip-text-muted pt-1">
                   {isArabic ? 'السعر الأصلي: ' : 'Original: '}
                   {isArabic
                     ? formatPrice(order.originalPrice)
@@ -797,9 +844,11 @@ export default function OrderDetailPage({
               <span className="font-mono text-cyan-400">{order.playerUid}</span>
             </p>
             <p>
-              <strong>{isArabic ? 'عدد الجواهر: ' : 'Diamonds: '}</strong>
+              <strong>{isArabic ? 'الباقة / العرض: ' : 'Package / Offering: '}</strong>
               <span className="text-amber-300 font-bold">
-                {order.package?.diamonds.toLocaleString()}
+                {order.package?.name
+                  ? `${order.package.name} (${order.package.diamonds.toLocaleString()} 💎)`
+                  : `${order.package?.diamonds.toLocaleString()} ${isArabic ? 'جوهرة' : 'Diamonds'}`}
               </span>
             </p>
           </div>

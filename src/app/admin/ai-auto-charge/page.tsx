@@ -602,8 +602,10 @@ export default function AiAutoChargePage() {
                           <span className="font-mono font-bold text-white text-sm">{simResult.playerUid || simResult.order.playerUid}</span>
                         </div>
                         <div>
-                          <span className="text-vip-text-muted block">{isArabic ? 'كمية الجواهر:' : 'Diamonds:'}</span>
-                          <span className="font-mono font-bold text-vip-gold text-sm">{simResult.diamondsCharged || simResult.order.package?.diamonds} 💎</span>
+                          <span className="text-vip-text-muted block">{isArabic ? 'الباقة / العرض:' : 'Package:'}</span>
+                          <span className="font-mono font-bold text-vip-gold text-sm">
+                            {simResult.order?.package?.name || `${simResult.diamondsCharged || simResult.order?.package?.diamonds || 0} 💎`}
+                          </span>
                         </div>
                         <div>
                           <span className="text-vip-text-muted block">{isArabic ? 'رقم إيصال التسليم:' : 'Provider Tx ID:'}</span>

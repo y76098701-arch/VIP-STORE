@@ -25,10 +25,17 @@ export async function POST(request: NextRequest) {
 
       if (!existing) {
         // Find or create package
-        let pkg = await prisma.diamondPackage.findFirst({
-          where: { diamonds: order.diamonds || 100 },
-        });
-
+        let pkg = null;
+        if (order.packageName) {
+          pkg = await prisma.diamondPackage.findFirst({
+            where: { name: order.packageName },
+          });
+        }
+        if (!pkg) {
+          pkg = await prisma.diamondPackage.findFirst({
+            where: { diamonds: order.diamonds || 100 },
+          });
+        }
         if (!pkg) {
           pkg = await prisma.diamondPackage.findFirst();
         }
