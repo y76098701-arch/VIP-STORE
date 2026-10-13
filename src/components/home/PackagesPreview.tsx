@@ -11,12 +11,12 @@ import type { DiamondPackage } from '@/types';
 
 // Default fallback packages to ensure instant aesthetic render even if DB is seeding
 const FALLBACK_PACKAGES: DiamondPackage[] = [
-  { id: 'pkg-1', diamonds: 100, price: 25, currency: 'EGP', isActive: true, sortOrder: 1 },
-  { id: 'pkg-2', diamonds: 310, price: 75, currency: 'EGP', isActive: true, sortOrder: 2 },
-  { id: 'pkg-3', diamonds: 520, price: 125, currency: 'EGP', isActive: true, sortOrder: 3 },
-  { id: 'pkg-4', diamonds: 1060, price: 250, currency: 'EGP', isActive: true, sortOrder: 4 },
-  { id: 'pkg-5', diamonds: 2180, price: 500, currency: 'EGP', isActive: true, sortOrder: 5 },
-  { id: 'pkg-6', diamonds: 5600, price: 1250, currency: 'EGP', isActive: true, sortOrder: 6 },
+  { id: 'pkg-1', diamonds: 100, price: 50, currency: 'EGP', isActive: true, sortOrder: 1 },
+  { id: 'pkg-2', diamonds: 310, price: 150, currency: 'EGP', isActive: true, sortOrder: 2 },
+  { id: 'pkg-3', diamonds: 520, price: 250, currency: 'EGP', isActive: true, sortOrder: 3 },
+  { id: 'pkg-4', diamonds: 1060, price: 500, currency: 'EGP', isActive: true, sortOrder: 4 },
+  { id: 'pkg-5', diamonds: 2180, price: 1000, currency: 'EGP', isActive: true, sortOrder: 5 },
+  { id: 'pkg-6', diamonds: 5600, price: 2500, currency: 'EGP', isActive: true, sortOrder: 6 },
 ];
 
 export const PackagesPreview: React.FC = () => {
@@ -136,9 +136,14 @@ export const PackagesPreview: React.FC = () => {
                             {formatDisplayPrice(discountedPrice20)}
                           </span>
                           <span className="text-[10px] sm:text-[11px] font-bold text-emerald-400">
-                            {language === 'ar' ? 'بعد الخصم' : 'Final'}
+                            {language === 'ar' ? '(خصم 20%)' : '(20% OFF)'}
                           </span>
                         </div>
+                        <span className="text-[10px] text-amber-300/90 font-bold block mt-0.5">
+                          {language === 'ar'
+                            ? `أو ${formatDisplayPrice(pkg.price * 0.5)} لأول طلب (50%) 🔥`
+                            : `or ${formatDisplayPrice(pkg.price * 0.5)} on 1st order (50%) 🔥`}
+                        </span>
                       </div>
 
                       <span className="text-[11px] text-emerald-400 font-semibold bg-emerald-500/10 border border-emerald-500/20 px-2 py-0.5 rounded self-start sm:self-auto">

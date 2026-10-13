@@ -59,15 +59,15 @@ export async function POST(request: NextRequest) {
     if (!pkg) {
       // Create fallback package if not seeded yet
       const fallbackPrices: Record<number, number> = {
-        100: 25,
-        310: 75,
-        520: 125,
-        1060: 250,
-        2180: 500,
-        5600: 1250,
+        100: 50,
+        310: 150,
+        520: 250,
+        1060: 500,
+        2180: 1000,
+        5600: 2500,
       };
       const diamonds = parseInt(packageId, 10) || 100;
-      const price = fallbackPrices[diamonds] || 25;
+      const price = fallbackPrices[diamonds] || 50;
 
       try {
         pkg = await prisma.diamondPackage.create({

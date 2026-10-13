@@ -1,5 +1,7 @@
 import type { Metadata } from 'next';
 import { Providers } from './providers';
+import { GlobalBackgroundEffects } from '@/components/ui/GlobalBackgroundEffects';
+import { ClickSparklesEffect } from '@/components/ui/ClickSparklesEffect';
 import './globals.css';
 
 export const metadata: Metadata = {
@@ -10,7 +12,9 @@ export const metadata: Metadata = {
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
     <html lang="ar" dir="rtl" suppressHydrationWarning>
-      <body className="bg-vip-bg text-vip-text-primary font-arabic antialiased min-h-screen">
+      <body className="bg-vip-bg text-vip-text-primary font-arabic antialiased min-h-screen relative overflow-x-hidden selection:bg-vip-purple/30 selection:text-vip-gold">
+        <GlobalBackgroundEffects />
+        <ClickSparklesEffect />
         <Providers>{children}</Providers>
       </body>
     </html>

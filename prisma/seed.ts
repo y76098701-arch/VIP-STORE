@@ -12,16 +12,20 @@ async function main() {
   });
 
   const packages = [
-    { diamonds: 100, price: 25, sortOrder: 1 },
-    { diamonds: 310, price: 75, sortOrder: 2 },
-    { diamonds: 520, price: 125, sortOrder: 3 },
-    { diamonds: 1060, price: 250, sortOrder: 4 },
-    { diamonds: 2180, price: 500, sortOrder: 5 },
-    { diamonds: 5600, price: 1250, sortOrder: 6 },
+    { diamonds: 100, price: 50, sortOrder: 1 },
+    { diamonds: 310, price: 150, sortOrder: 2 },
+    { diamonds: 520, price: 250, sortOrder: 3 },
+    { diamonds: 1060, price: 500, sortOrder: 4 },
+    { diamonds: 2180, price: 1000, sortOrder: 5 },
+    { diamonds: 5600, price: 2500, sortOrder: 6 },
   ];
   for (const pkg of packages) {
     const existing = await prisma.diamondPackage.findFirst({ where: { diamonds: pkg.diamonds } });
-    if (!existing) await prisma.diamondPackage.create({ data: pkg });
+    if (existing) {
+      await prisma.diamondPackage.update({ where: { id: existing.id }, data: { price: pkg.price } });
+    } else {
+      await prisma.diamondPackage.create({ data: pkg });
+    }
   }
 
   const defaults: Record<string, string> = {
@@ -35,7 +39,7 @@ async function main() {
     await prisma.setting.upsert({ where: { key }, update: {}, create: { key, value } });
   }
 
-  console.log('Database seeded successfully!');
+  console.log('Database seeded with real Free Fire diamond prices successfully!');
 }
 
 main().catch(console.error).finally(() => prisma.$disconnect());
