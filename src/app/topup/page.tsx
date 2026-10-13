@@ -36,6 +36,7 @@ import Toast from '@/components/ui/Toast';
 import { useLanguageContext } from '@/contexts/LanguageContext';
 import { useToast } from '@/hooks/useToast';
 import { cn, formatPrice } from '@/lib/utils';
+import { soundFx } from '@/lib/sound';
 import type { DiamondPackage, PaymentMethod } from '@/types';
 
 function TopupInner() {
@@ -223,6 +224,9 @@ function TopupInner() {
       const createdOrder = data.order || data;
       setOrderResult(createdOrder);
 
+      // Play subtle triumphant VIP chime
+      soundFx.playOrderPlaced();
+
       // Save order in localStorage so it can never be lost on tracking search
       try {
         const existing = JSON.parse(localStorage.getItem('vip_orders') || '[]');
@@ -269,6 +273,8 @@ function TopupInner() {
       }
 
       setReceiptUploaded(true);
+      // Play crystal level-up completion sound
+      soundFx.playReceiptUploaded();
       addToast(t('receiptUploaded'), 'success');
     } catch (err: any) {
       console.error(err);

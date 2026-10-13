@@ -32,6 +32,7 @@ import Toast from '@/components/ui/Toast';
 import { useLanguageContext } from '@/contexts/LanguageContext';
 import { useToast } from '@/hooks/useToast';
 import { cn, formatPrice, formatDate, getPaymentMethodLabel } from '@/lib/utils';
+import { soundFx } from '@/lib/sound';
 import type { OrderTrackingResult, PaymentMethod } from '@/types';
 
 function CheckoutInner() {
@@ -141,6 +142,7 @@ function CheckoutInner() {
       }
 
       setReceiptUploaded(true);
+      soundFx.playReceiptUploaded();
       addToast(t('receiptUploaded'), 'success');
 
       // Update order status locally
