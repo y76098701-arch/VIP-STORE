@@ -73,3 +73,24 @@ model Setting {
   key   String @unique
   value String
 }
+
+model AiPaymentLog {
+  id             String   @id @default(cuid())
+  sender         String?
+  rawMessage     String
+  provider       String   @default("UNKNOWN")
+  amount         Float?
+  transactionRef String?
+  senderPhone    String?
+  matchedOrderId String?
+  orderNumber    String?
+  playerUid      String?
+  diamonds       Int?
+  confidence     Float    @default(0)
+  autoFulfilled  Boolean  @default(false)
+  deliveryTxId   String?
+  status         String   @default("PROCESSED") // SUCCESS, NO_MATCH, FRAUD_SUSPECTED, ERROR
+  aiReasoning    String?
+  createdAt      DateTime @default(now())
+}
+

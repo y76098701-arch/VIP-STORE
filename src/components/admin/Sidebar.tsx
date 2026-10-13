@@ -13,6 +13,7 @@ import {
   X,
   ExternalLink,
   Shield,
+  Bot,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useLanguageContext } from '@/contexts/LanguageContext';
@@ -43,6 +44,12 @@ export const Sidebar: React.FC<SidebarProps> = ({
       href: '/admin/orders',
       label: isArabic ? 'إدارة الطلبات' : 'Orders',
       icon: ShoppingCart,
+      exact: false,
+    },
+    {
+      href: '/admin/ai-auto-charge',
+      label: isArabic ? 'ربط الهاتف والشحن بالـ AI' : 'AI Auto-Charge',
+      icon: Bot,
       exact: false,
     },
     {

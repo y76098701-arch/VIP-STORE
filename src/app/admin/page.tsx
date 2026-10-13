@@ -8,8 +8,9 @@ import {
   ArrowRight,
   RefreshCw,
   Clock,
-  PackageCheck,
   TrendingUp,
+  Bot,
+  Zap,
 } from 'lucide-react';
 import type { AdminStats, Order } from '@/types';
 import { StatsCards } from '@/components/admin/StatsCards';
@@ -115,6 +116,13 @@ export default function AdminDashboardPage() {
             />
             <span>{isArabic ? 'تحديث' : 'Refresh'}</span>
           </Button>
+
+          <Link href="/admin/ai-auto-charge">
+            <Button variant="secondary" size="sm" className="text-xs border-emerald-500/40 text-emerald-400 hover:bg-emerald-500/10 shadow-sm">
+              <Bot className="w-3.5 h-3.5 me-1.5 text-emerald-400" />
+              <span>{isArabic ? 'الشحن بالـ AI' : 'AI Auto-Charge'}</span>
+            </Button>
+          </Link>
 
           <Link href="/admin/orders">
             <Button variant="primary" size="sm" className="text-xs">
